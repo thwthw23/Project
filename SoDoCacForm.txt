@@ -21,8 +21,8 @@ Sau đây là sơ đồ chi tiết các form và cách chúng liên kết với 
                                ▼
                     ┌─────────────────────┐
                     │  frmDangNhap        │          
-                    │  (Form Đăng Nhập)   │              
-                    │                     │              
+                    │  (Form Đăng Nhập)   │             
+                    │                     │             
                     │  • txtTaiKhoan      │          ◄──┐
                     │  • txtMatKhau       │             │
                     │  • btnXacNhan       │             │

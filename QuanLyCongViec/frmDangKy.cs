@@ -143,8 +143,8 @@ namespace QuanLyCongViec
         private void ProcessRegistrationResult(int maNguoiDung, RegistrationData duLieuDangKy)
         {
             // Lấy các mã lỗi từ database
-            int maLoiUsernameTonTai = Helpers.SystemSettings.ErrorUsernameExists;
-            int maLoiEmailTonTai = Helpers.SystemSettings.ErrorEmailExists;
+            int maLoiUsernameTonTai = SystemSettings.ErrorUsernameExists;
+            int maLoiEmailTonTai = SystemSettings.ErrorEmailExists;
 
             if (maNguoiDung > 0)
             {
