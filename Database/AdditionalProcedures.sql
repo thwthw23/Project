@@ -158,6 +158,51 @@ BEGIN
 END;
 GO
 
+-- SP: Quên mật khẩu - Reset password bằng username hoặc email
+IF OBJECT_ID('sp_ResetPassword', 'P') IS NOT NULL
+    DROP PROCEDURE sp_ResetPassword;
+GO
+
+CREATE PROCEDURE sp_ResetPassword
+    @UsernameOrEmail NVARCHAR(100),
+    @NewPassword NVARCHAR(255),
+    @UserId INT OUTPUT,
+    @Result INT OUTPUT  -- 1: Thành công, -1: Không tìm thấy user, -2: Tài khoản bị vô hiệu hóa
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SET @UserId = 0;
+    SET @Result = -1;
+    
+    -- Tìm user theo username hoặc email
+    SELECT @UserId = Id
+    FROM Users
+    WHERE (Username = @UsernameOrEmail OR Email = @UsernameOrEmail)
+        AND IsActive = 1;
+    
+    IF @UserId IS NULL OR @UserId = 0
+    BEGIN
+        -- Kiểm tra xem có phải tài khoản bị vô hiệu hóa không
+        IF EXISTS (SELECT 1 FROM Users WHERE (Username = @UsernameOrEmail OR Email = @UsernameOrEmail) AND IsActive = 0)
+        BEGIN
+            SET @Result = -2; -- Tài khoản bị vô hiệu hóa
+            RETURN;
+        END
+        
+        SET @Result = -1; -- Không tìm thấy user
+        RETURN;
+    END
+    
+    -- Reset password
+    UPDATE Users 
+    SET PasswordHash = @NewPassword 
+    WHERE Id = @UserId;
+    
+    SET @Result = 1; -- Thành công
+END;
+GO
+
 -- =============================================
 -- TASK MANAGEMENT PROCEDURES
 -- =============================================

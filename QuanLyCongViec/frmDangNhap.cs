@@ -47,6 +47,14 @@ namespace QuanLyCongViec
         {
             OpenRegistrationForm();
         }
+        //Xử lý sự kiện click link Quên mật khẩu
+        //Mở form quên mật khẩu
+        //<param name="sender">Đối tượng gửi sự kiện</param>
+        //<param name="e">Thông tin sự kiện</param>
+        private void linklblQuenMK_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            OpenForgotPasswordForm();
+        }
         //Xử lý sự kiện nhấn phím Enter trong textbox Tài khoản
         //Chuyển focus sang textbox Mật khẩu
         //<param name="sender">Đối tượng gửi sự kiện</param>
@@ -119,6 +127,21 @@ namespace QuanLyCongViec
             if (ketQua == DialogResult.OK && !string.IsNullOrWhiteSpace(frmDangKy.RegisteredUsername))
             {
                 FillUsernameAfterRegistration(frmDangKy.RegisteredUsername);
+            }
+        }
+        //Mở form quên mật khẩu
+        private void OpenForgotPasswordForm()
+        {
+            frmQuenMK frmQuenMK = new frmQuenMK();
+            this.Hide();
+
+            DialogResult ketQua = frmQuenMK.ShowDialog();
+            this.Show();
+
+            // Nếu reset password thành công, có thể focus vào textbox tài khoản
+            if (ketQua == DialogResult.OK)
+            {
+                txtTaiKhoan.Focus();
             }
         }
         //Điền tên đăng nhập vào textbox sau khi đăng ký thành công

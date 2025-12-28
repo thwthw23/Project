@@ -64,7 +64,7 @@
             // 
             this.btnXacNhan.Location = new System.Drawing.Point(105, 267);
             this.btnXacNhan.Name = "btnXacNhan";
-            this.btnXacNhan.Size = new System.Drawing.Size(250, 40);
+            this.btnXacNhan.Size = new System.Drawing.Size(250, 41);
             this.btnXacNhan.TabIndex = 7;
             this.btnXacNhan.Text = "Đăng ký";
             this.btnXacNhan.UseVisualStyleBackColor = true;
@@ -72,7 +72,7 @@
             // 
             // txtMatKhau
             // 
-            this.txtMatKhau.Location = new System.Drawing.Point(140, 63);
+            this.txtMatKhau.Location = new System.Drawing.Point(139, 63);
             this.txtMatKhau.Name = "txtMatKhau";
             this.txtMatKhau.PasswordChar = '*';
             this.txtMatKhau.Size = new System.Drawing.Size(250, 22);
@@ -80,7 +80,7 @@
             // 
             // txtTaiKhoan
             // 
-            this.txtTaiKhoan.Location = new System.Drawing.Point(140, 23);
+            this.txtTaiKhoan.Location = new System.Drawing.Point(139, 23);
             this.txtTaiKhoan.Name = "txtTaiKhoan";
             this.txtTaiKhoan.Size = new System.Drawing.Size(250, 22);
             this.txtTaiKhoan.TabIndex = 1;
@@ -89,42 +89,46 @@
             // 
             this.label1.AutoSize = true;
             this.label1.Cursor = System.Windows.Forms.Cursors.Arrow;
+            this.label1.Font = new System.Drawing.Font("Times New Roman", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.Location = new System.Drawing.Point(105, 317);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(106, 16);
+            this.label1.Size = new System.Drawing.Size(121, 19);
             this.label1.TabIndex = 0;
             this.label1.Text = "Đã có tài khoản?";
             // 
             // lblMatKhau
             // 
             this.lblMatKhau.AutoSize = true;
+            this.lblMatKhau.Font = new System.Drawing.Font("Times New Roman", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblMatKhau.Location = new System.Drawing.Point(50, 66);
             this.lblMatKhau.Name = "lblMatKhau";
-            this.lblMatKhau.Size = new System.Drawing.Size(64, 16);
+            this.lblMatKhau.Size = new System.Drawing.Size(76, 19);
             this.lblMatKhau.TabIndex = 0;
             this.lblMatKhau.Text = "Mật khẩu:";
             // 
             // lblTaiKhoan
             // 
             this.lblTaiKhoan.AutoSize = true;
+            this.lblTaiKhoan.Font = new System.Drawing.Font("Times New Roman", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblTaiKhoan.Location = new System.Drawing.Point(50, 26);
             this.lblTaiKhoan.Name = "lblTaiKhoan";
-            this.lblTaiKhoan.Size = new System.Drawing.Size(70, 16);
+            this.lblTaiKhoan.Size = new System.Drawing.Size(79, 19);
             this.lblTaiKhoan.TabIndex = 0;
             this.lblTaiKhoan.Text = "Tài khoản:";
             // 
             // label2
             // 
             this.label2.AutoSize = true;
+            this.label2.Font = new System.Drawing.Font("Times New Roman", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label2.Location = new System.Drawing.Point(50, 106);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(65, 16);
+            this.label2.Size = new System.Drawing.Size(76, 19);
             this.label2.TabIndex = 0;
             this.label2.Text = "Xác nhận:";
             // 
             // txtXacNhanMatKhau
             // 
-            this.txtXacNhanMatKhau.Location = new System.Drawing.Point(140, 103);
+            this.txtXacNhanMatKhau.Location = new System.Drawing.Point(139, 103);
             this.txtXacNhanMatKhau.Name = "txtXacNhanMatKhau";
             this.txtXacNhanMatKhau.PasswordChar = '*';
             this.txtXacNhanMatKhau.Size = new System.Drawing.Size(250, 22);
@@ -133,15 +137,16 @@
             // label3
             // 
             this.label3.AutoSize = true;
+            this.label3.Font = new System.Drawing.Font("Times New Roman", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label3.Location = new System.Drawing.Point(50, 146);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(49, 16);
+            this.label3.Size = new System.Drawing.Size(60, 19);
             this.label3.TabIndex = 0;
             this.label3.Text = "Họ tên:";
             // 
             // txtHoTen
             // 
-            this.txtHoTen.Location = new System.Drawing.Point(140, 143);
+            this.txtHoTen.Location = new System.Drawing.Point(139, 143);
             this.txtHoTen.Name = "txtHoTen";
             this.txtHoTen.Size = new System.Drawing.Size(250, 22);
             this.txtHoTen.TabIndex = 4;
@@ -149,15 +154,16 @@
             // label4
             // 
             this.label4.AutoSize = true;
+            this.label4.Font = new System.Drawing.Font("Times New Roman", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label4.Location = new System.Drawing.Point(50, 186);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(44, 16);
+            this.label4.Size = new System.Drawing.Size(54, 19);
             this.label4.TabIndex = 0;
             this.label4.Text = "Email:";
             // 
             // txtEmail
             // 
-            this.txtEmail.Location = new System.Drawing.Point(140, 183);
+            this.txtEmail.Location = new System.Drawing.Point(139, 183);
             this.txtEmail.Name = "txtEmail";
             this.txtEmail.Size = new System.Drawing.Size(250, 22);
             this.txtEmail.TabIndex = 5;
@@ -165,64 +171,65 @@
             // lblHintTaiKhoan
             // 
             this.lblHintTaiKhoan.AutoSize = true;
-            this.lblHintTaiKhoan.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblHintTaiKhoan.Font = new System.Drawing.Font("Times New Roman", 9F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblHintTaiKhoan.ForeColor = System.Drawing.Color.Gray;
-            this.lblHintTaiKhoan.Location = new System.Drawing.Point(140, 48);
+            this.lblHintTaiKhoan.Location = new System.Drawing.Point(139, 48);
             this.lblHintTaiKhoan.Name = "lblHintTaiKhoan";
-            this.lblHintTaiKhoan.Size = new System.Drawing.Size(204, 16);
+            this.lblHintTaiKhoan.Size = new System.Drawing.Size(229, 17);
             this.lblHintTaiKhoan.TabIndex = 8;
             this.lblHintTaiKhoan.Text = "3-50 ký tự, không có khoảng trắng";
             // 
             // lblHintMatKhau
             // 
             this.lblHintMatKhau.AutoSize = true;
-            this.lblHintMatKhau.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblHintMatKhau.Font = new System.Drawing.Font("Times New Roman", 9F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblHintMatKhau.ForeColor = System.Drawing.Color.Gray;
-            this.lblHintMatKhau.Location = new System.Drawing.Point(140, 88);
+            this.lblHintMatKhau.Location = new System.Drawing.Point(139, 87);
             this.lblHintMatKhau.Name = "lblHintMatKhau";
-            this.lblHintMatKhau.Size = new System.Drawing.Size(191, 16);
+            this.lblHintMatKhau.Size = new System.Drawing.Size(217, 17);
             this.lblHintMatKhau.TabIndex = 8;
             this.lblHintMatKhau.Text = "Tối thiểu 6 ký tự, tối đa 100 ký tự";
             // 
             // lblHintXacNhanMatKhau
             // 
             this.lblHintXacNhanMatKhau.AutoSize = true;
-            this.lblHintXacNhanMatKhau.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblHintXacNhanMatKhau.Font = new System.Drawing.Font("Times New Roman", 9F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblHintXacNhanMatKhau.ForeColor = System.Drawing.Color.Gray;
-            this.lblHintXacNhanMatKhau.Location = new System.Drawing.Point(140, 128);
+            this.lblHintXacNhanMatKhau.Location = new System.Drawing.Point(139, 128);
             this.lblHintXacNhanMatKhau.Name = "lblHintXacNhanMatKhau";
-            this.lblHintXacNhanMatKhau.Size = new System.Drawing.Size(189, 16);
+            this.lblHintXacNhanMatKhau.Size = new System.Drawing.Size(205, 17);
             this.lblHintXacNhanMatKhau.TabIndex = 8;
             this.lblHintXacNhanMatKhau.Text = "Nhập lại mật khẩu để xác nhận";
             // 
             // lblHintHoTen
             // 
             this.lblHintHoTen.AutoSize = true;
-            this.lblHintHoTen.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblHintHoTen.Font = new System.Drawing.Font("Times New Roman", 9F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblHintHoTen.ForeColor = System.Drawing.Color.Gray;
-            this.lblHintHoTen.Location = new System.Drawing.Point(140, 168);
+            this.lblHintHoTen.Location = new System.Drawing.Point(139, 169);
             this.lblHintHoTen.Name = "lblHintHoTen";
-            this.lblHintHoTen.Size = new System.Drawing.Size(192, 16);
+            this.lblHintHoTen.Size = new System.Drawing.Size(206, 17);
             this.lblHintHoTen.TabIndex = 8;
             this.lblHintHoTen.Text = "Nhập họ và tên đầy đủ của bạn";
             // 
             // lblHintEmail
             // 
             this.lblHintEmail.AutoSize = true;
-            this.lblHintEmail.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblHintEmail.Font = new System.Drawing.Font("Times New Roman", 9F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblHintEmail.ForeColor = System.Drawing.Color.Gray;
-            this.lblHintEmail.Location = new System.Drawing.Point(140, 208);
+            this.lblHintEmail.Location = new System.Drawing.Point(139, 208);
             this.lblHintEmail.Name = "lblHintEmail";
-            this.lblHintEmail.Size = new System.Drawing.Size(171, 16);
+            this.lblHintEmail.Size = new System.Drawing.Size(177, 17);
             this.lblHintEmail.TabIndex = 8;
             this.lblHintEmail.Text = "Ví dụ: example@email.com";
             // 
             // chkDongYDieuKhoan
             // 
             this.chkDongYDieuKhoan.AutoSize = true;
+            this.chkDongYDieuKhoan.Font = new System.Drawing.Font("Times New Roman", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.chkDongYDieuKhoan.Location = new System.Drawing.Point(105, 237);
             this.chkDongYDieuKhoan.Name = "chkDongYDieuKhoan";
-            this.chkDongYDieuKhoan.Size = new System.Drawing.Size(258, 20);
+            this.chkDongYDieuKhoan.Size = new System.Drawing.Size(290, 23);
             this.chkDongYDieuKhoan.TabIndex = 6;
             this.chkDongYDieuKhoan.Text = "Tôi đồng ý với các điều khoản sử dụng";
             this.chkDongYDieuKhoan.UseVisualStyleBackColor = true;
@@ -231,7 +238,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(450, 360);
+            this.ClientSize = new System.Drawing.Size(450, 361);
             this.Controls.Add(this.chkDongYDieuKhoan);
             this.Controls.Add(this.lblHintEmail);
             this.Controls.Add(this.lblHintHoTen);
