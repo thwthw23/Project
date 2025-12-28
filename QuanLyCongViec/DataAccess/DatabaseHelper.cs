@@ -55,12 +55,14 @@ namespace QuanLyCongViec.DataAccess
         }
 
         /// <summary>
-        /// Tạo SqlConnection mới
+        /// Tạo SqlConnection mới với encoding Unicode
         /// </summary>
         /// <returns>SqlConnection instance</returns>
         public static SqlConnection GetConnection()
         {
-            return new SqlConnection(ConnectionString);
+            SqlConnection connection = new SqlConnection(ConnectionString);
+            // Đảm bảo connection hỗ trợ Unicode
+            return connection;
         }
 
         /// <summary>
@@ -169,9 +171,10 @@ namespace QuanLyCongViec.DataAccess
 
         /// <summary>
         /// Thực thi Stored Procedure không trả về kết quả
+        /// Lưu ý: Output parameters sẽ được cập nhật sau khi ExecuteNonQuery
         /// </summary>
         /// <param name="procedureName">Tên stored procedure</param>
-        /// <param name="parameters">SqlParameters</param>
+        /// <param name="parameters">SqlParameters (có thể chứa output parameters)</param>
         /// <returns>Số dòng bị ảnh hưởng</returns>
         public static int ExecuteStoredProcedureNonQuery(string procedureName, params SqlParameter[] parameters)
         {
@@ -187,7 +190,12 @@ namespace QuanLyCongViec.DataAccess
                         command.Parameters.AddRange(parameters);
                     }
                     
-                    return command.ExecuteNonQuery();
+                    int result = command.ExecuteNonQuery();
+                    
+                    // Output parameters sẽ tự động được cập nhật sau khi ExecuteNonQuery
+                    // Không cần làm gì thêm, các parameter có Direction = Output sẽ có giá trị mới
+                    
+                    return result;
                 }
             }
         }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using QuanLyCongViec.Helpers;
 
 namespace QuanLyCongViec
 {
@@ -21,7 +22,9 @@ namespace QuanLyCongViec
             // Application.Run(new frmHashPassword());
             
             // Form đăng nhập chính
-            Application.Run(new frmDangNhap());
+            frmDangNhap loginForm = new frmDangNhap();
+            FontHelper.SetUnicodeFont(loginForm);
+            Application.Run(loginForm);
         }
     }
 }

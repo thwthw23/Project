@@ -1025,18 +1025,84 @@ private void HandleSuccessfulLogin(DataRow userRow)
 │ frmDangNhap     │ Đăng nhập                │ ✅ Hoàn thành           │
 │                 │                          │ ⚠️ Cần sửa để mở frmMain│
 │ frmDangKy       │ Đăng ký                  │ ✅ Hoàn thành           │
-│ frmMain         │ Form chính điều hướng    │ 📝 ĐÃ ĐỀ XUẤT THIẾT KẾ │
-│                 │                          │   (Xem chi tiết phần 2) │
+│ frmMain         │ Form chính điều hướng    │ ❌ CHƯA CÓ CODE        │
+│                 │                          │ 📝 ĐÃ ĐỀ XUẤT THIẾT KẾ │
+│                 │                          │   (Xem chi tiết phần 5) │
 │ frmThemSuaTask  │ Quản lý công việc        │ ✅ Hoàn thành           │
-│                 │                          │ ⚠️ Cần sửa constructor  │
+│                 │                          │ ✅ Đã có constructor    │
+│                 │                          │   nhận userId           │
 │ frmBaoCao       │ Báo cáo & Thống kê       │ ✅ Hoàn thành           │
-│                 │                          │ ⚠️ Cần sửa constructor  │
+│                 │                          │ ✅ Đã có constructor    │
+│                 │                          │   nhận userId           │
 │ frmLichSu       │ Lịch sử thay đổi         │ ✅ Hoàn thành           │
 │ Form1           │ Form cũ (không dùng)     │ ❌ KHÔNG SỬ DỤNG       │
+│                 │                          │   Có thể xóa            │
 └─────────────────┴──────────────────────────┴─────────────────────────┘
 
 ================================================================================
-7. STORED PROCEDURES ĐƯỢC SỬ DỤNG
+7. HELPER CLASSES VÀ DATA ACCESS
+================================================================================
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║ DATA ACCESS LAYER                                                          ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+📄 DatabaseHelper.cs
+🎯 Chức năng:
+   - Lớp trung gian kết nối với SQL Server
+   - Thực thi stored procedures
+   - Xử lý connection string từ App.config
+   - Cung cấp các method:
+     • ExecuteStoredProcedure() → Trả về DataTable
+     • ExecuteStoredProcedureNonQuery() → Thực thi không trả về dữ liệu
+     • TestConnection() → Kiểm tra kết nối database
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║ HELPER CLASSES                                                             ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+📄 Helpers/PasswordHelper.cs
+🎯 Chức năng:
+   - Hash mật khẩu bằng SHA256 + Salt
+   - Method: HashPassword(string password) → string
+   - Được sử dụng trong frmDangNhap và frmDangKy
+
+📄 Helpers/CurrentUser.cs
+🎯 Chức năng:
+   - Lưu trữ thông tin user hiện tại đang đăng nhập
+   - Static class để truy cập từ mọi form
+   - Methods:
+     • SetCurrentUser(userId, username, fullName)
+     • GetUserId() → int
+     • GetUsername() → string
+     • GetFullName() → string
+     • IsLoggedIn() → bool
+     • Clear() → Xóa thông tin khi đăng xuất
+
+📄 Helpers/SystemSettings.cs
+🎯 Chức năng:
+   - Lấy các cấu hình hệ thống từ database (Settings table)
+   - Cache để tránh query nhiều lần
+   - Properties:
+     • MaxLoginAttempts → Số lần đăng nhập sai tối đa
+     • LockoutMinutes → Thời gian khóa tài khoản (phút)
+     • ErrorUsernameExists → Mã lỗi username đã tồn tại
+     • ErrorEmailExists → Mã lỗi email đã tồn tại
+
+📄 Helpers/ValidationLimits.cs
+🎯 Chức năng:
+   - Lấy các giới hạn validation từ database metadata
+   - Query INFORMATION_SCHEMA.COLUMNS để lấy độ dài tối đa/tối thiểu
+   - Cache để tránh query nhiều lần
+   - Properties:
+     • MinUsernameLength / MaxUsernameLength
+     • MinPasswordLength / MaxPasswordLength
+     • MinEmailLength / MaxEmailLength
+     • MinFullNameLength / MaxFullNameLength
+
+
+================================================================================
+8. STORED PROCEDURES ĐƯỢC SỬ DỤNG
 ================================================================================
 
 ╔════════════════════════════════════════════════════════════════════════════╗
@@ -1077,7 +1143,7 @@ private void HandleSuccessfulLogin(DataRow userRow)
 • sp_SearchTaskHistory  → frmLichSu (Tìm kiếm lịch sử)
 
 ================================================================================
-8. CẤU TRÚC DỮ LIỆU
+9. CẤU TRÚC DỮ LIỆU
 ================================================================================
 
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -1122,12 +1188,54 @@ private void HandleSuccessfulLogin(DataRow userRow)
 └─────────────────────────────────────────────────────────────────────────┘
 
 ================================================================================
+10. TÓM TẮT VÀ ĐÁNH GIÁ
+================================================================================
+
+✅ CÁC FORM ĐÃ HOÀN THÀNH:
+────────────────────────────────────────────────────────────────────────────
+1. Program.cs              → Entry point, khởi chạy frmDangNhap
+2. frmDangNhap            → Đăng nhập với lockout mechanism
+3. frmDangKy              → Đăng ký với validation đầy đủ
+4. frmThemSuaTask         → Quản lý CRUD công việc (đã nhận userId)
+5. frmBaoCao              → Thống kê và báo cáo (đã nhận userId)
+6. frmLichSu              → Lịch sử thay đổi công việc
+
+✅ CÁC HELPER CLASSES ĐÃ HOÀN THÀNH:
+────────────────────────────────────────────────────────────────────────────
+1. DatabaseHelper         → Data access layer
+2. PasswordHelper         → Hash mật khẩu
+3. CurrentUser            → Quản lý session user
+4. SystemSettings         → Lấy cấu hình từ database
+5. ValidationLimits       → Lấy giới hạn validation từ database
+
+❌ CÁC FORM CHƯA CÓ CODE:
+────────────────────────────────────────────────────────────────────────────
+1. frmMain                → Form chính điều hướng (CHƯA TẠO)
+                              - Đã có thiết kế chi tiết ở phần 5
+                              - Cần implement theo mẫu code
+
+⚠️ VẤN ĐỀ CẦN XỬ LÝ:
+────────────────────────────────────────────────────────────────────────────
+1. frmMain chưa được tạo → Sau khi đăng nhập, không có form nào mở
+2. Form1 không sử dụng → Có thể xóa để tránh nhầm lẫn
+3. frmDangNhap chưa mở frmMain → Cần sửa HandleSuccessfulLogin()
+
+📝 GHI CHÚ:
+────────────────────────────────────────────────────────────────────────────
+- Tất cả các form trong project đã được liệt kê đầy đủ
+- Các helper classes đã được tích hợp và sử dụng
+- Constants đã được chuyển sang database (không hardcode)
+- Stored procedures đã thay thế direct SQL queries
+- UserId đã được truyền đúng cách qua constructor
+
+
+================================================================================
 KẾT THÚC TÀI LIỆU
 ================================================================================
 
 📅 Cập nhật lần cuối: 2024
 📝 Tác giả: Hệ thống Quản Lý Công Việc
-📄 Phiên bản: 1.0
+📄 Phiên bản: 1.1
 
 💡 LƯU Ý:
 - Tài liệu này mô tả cấu trúc hiện tại của ứng dụng
@@ -1140,6 +1248,355 @@ KẾT THÚC TÀI LIỆU
    2. Thiết kế giao diện theo sơ đồ ở phần 5
    3. Implement các method theo code mẫu
    4. Sửa frmDangNhap để mở frmMain sau khi đăng nhập
-   5. Sửa constructor các form khác để nhận userId
-   6. Test luồng điều hướng đầy đủ
+   5. Test luồng điều hướng đầy đủ
+
+📋 DANH SÁCH FORM TRONG PROJECT:
+   ✅ frmDangNhap.cs
+   ✅ frmDangKy.cs
+   ✅ frmThemSuaTask.cs
+   ✅ frmBaoCao.cs
+   ✅ frmLichSu.cs
+   ❌ frmMain.cs (CHƯA CÓ - CẦN TẠO)
+   ❌ Form1.cs (KHÔNG SỬ DỤNG - CÓ THỂ XÓA)
+
+================================================================================
+11. ĐỀ XUẤT CÁC FORM NÊN THÊM (TÙY CHỌN)
+================================================================================
+
+💡 Dựa trên phân tích ứng dụng hiện tại, đây là các form được đề xuất thêm
+   để nâng cao trải nghiệm người dùng và tính đầy đủ của hệ thống:
+
+⚠️ ĐÃ KIỂM TRA TRÙNG LẶP:
+   - Đã loại bỏ frmTimKiemNangCao vì trùng chức năng với tìm kiếm trong 
+     frmThemSuaTask (đã có btnTimKiem và sp_SearchTasks)
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║ FORM ĐỀ XUẤT 1: frmQuanLyTaiKhoan (Quản Lý Tài Khoản)                    ║
+║ Mức độ ưu tiên: ⭐⭐⭐⭐⭐ (RẤT QUAN TRỌNG)                                 ║
+║ Độ phức tạp: ⭐⭐ (PHÙ HỢP SINH VIÊN NĂM 2)                               ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+📄 Tên file: frmQuanLyTaiKhoan.cs
+🎯 Chức năng:
+   - Xem thông tin tài khoản hiện tại
+   - Đổi mật khẩu
+   - Cập nhật thông tin cá nhân (Họ tên, Email)
+
+🔑 Các thành phần đề xuất (Đơn giản):
+   • GroupBox "Thông tin tài khoản"
+     - lblUsername: Label hiển thị username (read-only) - lấy từ CurrentUser
+     - txtHoTen: TextBox họ tên (có thể sửa)
+     - txtEmail: TextBox email (có thể sửa)
+     - lblNgayTao: Label ngày tạo tài khoản (hiển thị dd/MM/yyyy)
+     - lblLanDangNhapCuoi: Label lần đăng nhập cuối (hiển thị dd/MM/yyyy)
+   
+   • GroupBox "Đổi mật khẩu"
+     - txtMatKhauCu: TextBox mật khẩu cũ (PasswordChar = '*')
+     - txtMatKhauMoi: TextBox mật khẩu mới (PasswordChar = '*')
+     - txtXacNhanMatKhauMoi: TextBox xác nhận mật khẩu mới (PasswordChar = '*')
+     - btnDoiMatKhau: Button đổi mật khẩu
+   
+   • btnCapNhat: Button "Cập nhật thông tin"
+   • btnDong: Button "Đóng"
+
+🔄 Luồng điều hướng (Đơn giản):
+   - Được gọi từ frmMain: new frmQuanLyTaiKhoan().ShowDialog()
+   - Constructor: Lấy userId từ CurrentUser.GetUserId()
+   - Load: Gọi sp_GetUserById để lấy thông tin user
+   - btnCapNhat: Validate → Gọi sp_UpdateUser (đã có) → Thông báo thành công
+   - btnDoiMatKhau: Validate → Hash mật khẩu mới → Gọi sp_ChangePassword (đã có)
+
+💾 Database Operations (Đã có sẵn):
+   ✅ sp_GetUserById → Đã có trong AdditionalProcedures.sql
+   ✅ sp_UpdateUser → Đã có trong AdditionalProcedures.sql  
+   ✅ sp_ChangePassword → Đã có trong AdditionalProcedures.sql
+   ✅ PasswordHelper.HashPassword() → Đã có helper class
+
+🛡️ Bảo mật (Đơn giản):
+   - Kiểm tra mật khẩu cũ trước khi đổi (dùng PasswordHelper.HashPassword so sánh)
+   - Hash mật khẩu mới bằng PasswordHelper.HashPassword() (đã có)
+   - Validate email dùng ValidationLimits (đã có helper)
+   - Validate độ dài họ tên dùng ValidationLimits (đã có helper)
+
+📝 ĐÁNH GIÁ PHÙ HỢP:
+   ✅ Code đơn giản: Chỉ cần gọi SP và hiển thị dữ liệu
+   ✅ Tận dụng helper classes đã có (PasswordHelper, ValidationLimits)
+   ✅ Pattern giống frmDangKy, frmDangNhap
+   ✅ Không cần kiến thức nâng cao
+
+──────────────────────────────────────────────────────────────────────────────
+
+⚠️ LƯU Ý: Form "frmTimKiemNangCao" đã được loại bỏ khỏi danh sách đề xuất vì TRÙNG
+   chức năng với frmThemSuaTask (đã có tìm kiếm công việc qua btnTimKiem và 
+   sp_SearchTasks). Mặc dù form đề xuất có nhiều filter hơn, nhưng mục đích chính
+   vẫn là tìm kiếm công việc, nên không cần thiết tạo form riêng.
+
+──────────────────────────────────────────────────────────────────────────────
+
+📊 TÓM TẮT ĐỀ XUẤT:
+
+┌──────────────────────────────┬──────────────┬──────────────┬──────────────────┐
+│ Form đề xuất                 │ Ưu tiên      │ Độ phức tạp  │ Khuyến nghị      │
+├──────────────────────────────┼──────────────┼──────────────┼──────────────────┤
+│ frmQuanLyTaiKhoan            │ ⭐⭐⭐⭐⭐   │ ⭐⭐ (Đơn)   │ ✅ NÊN TẠO        │
+│ frmAdminDashboard (MỨC 1)    │ ⭐⭐⭐⭐     │ ⭐⭐ (Đơn)   │ ✅ NÊN CÓ        │
+└──────────────────────────────┴──────────────┴──────────────┴──────────────────┘
+
+❌ ĐÃ XÓA: 
+   - frmTimKiemNangCao (TRÙNG với chức năng tìm kiếm trong frmThemSuaTask)
+   - frmChiTietTask (Bỏ theo yêu cầu)
+   - frmHuongDan (Bỏ theo yêu cầu)
+
+💡 ĐÁNH GIÁ VÀ KHUYẾN NGHỊ CHO SINH VIÊN NĂM 2:
+
+   ✅ ƯU TIÊN 1: frmMain (BẮT BUỘC)
+      - Form chính điều hướng, đã có thiết kế chi tiết
+      - Độ phức tạp: ⭐⭐
+   
+   ✅ ƯU TIÊN 2: frmQuanLyTaiKhoan (NÊN LÀM)
+      - Quan trọng: Người dùng cần đổi mật khẩu
+      - Đơn giản: Chỉ gọi SP đã có sẵn
+      - Độ phức tạp: ⭐⭐ (Tương đương frmDangKy)
+   
+   ✅ ƯU TIÊN 3: frmAdminDashboard MỨC 1 (NÊN LÀM NẾU CÓ ADMIN)
+      - Tab 1: Tổng quan (giống frmBaoCao)
+      - Tab 2: Quản lý users (đơn giản: UPDATE IsActive, DELETE)
+      - Độ phức tạp: ⭐⭐
+   
+   ❌ KHÔNG KHUYẾN NGHỊ: frmAdminDashboard Tab "Log đăng nhập"
+      - Quá phức tạp: Cần tạo bảng mới, trigger, xử lý log
+      - Không cần thiết cho đồ án năm 2
+      - Độ phức tạp: ⭐⭐⭐⭐
+   
+   📝 KẾT LUẬN:
+      Với sinh viên năm 2, nên tập trung vào:
+      1. frmMain (bắt buộc)
+      2. frmQuanLyTaiKhoan (nên có)
+      3. frmAdminDashboard MỨC 1 (nếu cần admin)
+      
+      Có thể bỏ qua: Tab Log đăng nhập
+
+──────────────────────────────────────────────────────────────────────────────
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║ FORM ĐỀ XUẤT 5: frmAdminDashboard (Admin Dashboard - MỨC 1)               ║
+║ Mức độ ưu tiên: ⭐⭐⭐⭐ (CHO ADMIN/QUẢN TRỊ VIÊN)                          ║
+║ Độ phức tạp: ⭐⭐ (ĐƠN GIẢN - PHÙ HỢP SINH VIÊN NĂM 2)                    ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+📄 Tên file: frmAdminDashboard.cs
+🎯 Chức năng (MỨC 1: Admin Cơ Bản - Đơn giản):
+
+   ✅ MỨC 1: Admin Cơ Bản (Chỉ làm các tính năng này):
+   - Tab 1: Thống kê tổng quan hệ thống
+     • Tổng số users (active/inactive)
+     • Tổng số tasks
+     • Tasks theo status (Todo, Doing, Done)
+     • Tasks quá hạn
+   
+   - Tab 2: Quản lý Users
+     • Xem danh sách tất cả users
+     • Khóa/Mở khóa tài khoản (Toggle IsActive)
+     • Xóa user (có xác nhận)
+     • Tìm kiếm user
+   
+   → Độ phức tạp: ⭐⭐ (Tương đương frmBaoCao, frmThemSuaTask)
+   → Thời gian: 2-3 ngày
+
+🔑 Phương pháp "CÁCH 2" - Nhận diện Admin:
+   CÁCH 1 (Nếu có Role field): Kiểm tra Role = 'Admin'
+   CÁCH 2 (Không có Role field): Kiểm tra Username = 'admin' (hardcoded)
+   
+   → Hiện tại database không có Role field, nên dùng CÁCH 2:
+      if (CurrentUser.GetUsername().ToLower() == "admin")
+      {
+          // Hiển thị menu Admin
+          // Mở frmAdminDashboard
+      }
+
+🔑 Các thành phần đề xuất (MỨC 1: Admin Cơ Bản - Chỉ 2 Tab):
+   • TabControl với 2 Tab đơn giản:
+   
+     ┌────────────────────────────────────────────────────────────────────┐
+     │ Tab 1: "Tổng quan" (MỨC 1)                                        │
+     ├────────────────────────────────────────────────────────────────────┤
+     │ GroupBox "Thống kê hệ thống":                                     │
+     │   • lblTongUsers: Label "Tổng số người dùng: [số]"                 │
+     │   • lblUsersActive: Label "Người dùng đang hoạt động: [số]"        │
+     │   • lblUsersInactive: Label "Người dùng bị khóa: [số]"             │
+     │   • lblTongTasks: Label "Tổng số công việc: [số]"                  │
+     │                                                                     │
+     │ GroupBox "Thống kê theo trạng thái":                               │
+     │   • lblTasksTodo: Label "Chưa bắt đầu: [số]"                       │
+     │   • lblTasksDoing: Label "Đang làm: [số]"                          │
+     │   • lblTasksDone: Label "Hoàn thành: [số]"                         │
+     │   • lblTasksOverdue: Label "Quá hạn: [số]"                         │
+     └────────────────────────────────────────────────────────────────────┘
+     
+     ┌────────────────────────────────────────────────────────────────────┐
+     │ Tab 2: "Quản lý người dùng" (MỨC 1)                               │
+     ├────────────────────────────────────────────────────────────────────┤
+     │ dgvUsers: DataGridView danh sách tất cả users                      │
+     │   Các cột: Id, Username, FullName, Email, CreatedDate,             │
+     │            LastLoginDate, IsActive, Tổng Tasks                     │
+     │                                                                     │
+     │ GroupBox "Thao tác":                                               │
+     │   • btnKhoaUser: Button "Khóa/Mở khóa" (Toggle IsActive)          │
+     │   • btnXoaUser: Button "Xóa user" (với xác nhận)                  │
+     │   • txtTimKiemUser: TextBox tìm kiếm user                          │
+     │   • btnTimKiemUser: Button "Tìm kiếm"                              │
+     │   • btnLamMoi: Button "Làm mới" (reload tất cả users)             │
+     └────────────────────────────────────────────────────────────────────┘
+
+🔄 Luồng điều hướng (MỨC 1: Admin Cơ Bản - Đơn giản):
+   
+   ┌──────────────────────────────────────────────────────────────┐
+   │ 1. Kiểm tra quyền Admin:                                    │
+   │    - Trong frmDangNhap hoặc frmMain                        │
+   │    - if (CurrentUser.GetUsername().ToLower() == "admin")    │
+   │      {                                                       │
+   │          // Hiển thị button "Admin Panel"                    │
+   │          // Mở frmAdminDashboard                              │
+   │      }                                                       │
+   │                                                              │
+   │ 2. Khi mở frmAdminDashboard:                                │
+   │    ├─ Tab 1 "Tổng quan":                                    │
+   │    │   └─ Gọi sp_GetSystemStatistics → Hiển thị tổng quan   │
+   │    │                                                         │
+   │    └─ Tab 2 "Quản lý người dùng":                          │
+   │        └─ Gọi sp_GetAllUsers → Load danh sách users         │
+   │                                                              │
+   │ 3. Tab "Quản lý người dùng" (MỨC 1):                       │
+   │    - btnKhoaUser → Toggle IsActive (Khóa/Mở khóa)          │
+   │    - btnXoaUser → Xóa user (có xác nhận, cascade delete)   │
+   │        └─ btnLamMoi_Click:                                  │
+   │            └─ Reload tất cả users (gọi lại sp_GetAllUsers)  │
+   └──────────────────────────────────────────────────────────────┘
+
+💾 Database Operations (MỨC 1: Chỉ cần các SP cơ bản):
+
+   ✅ CẦN TẠO MỚI (theo pattern hiện tại - đơn giản):
+   • sp_GetAllUsers → Lấy tất cả users với thống kê
+     - SELECT u.*, COUNT(t.Id) AS TongTasks
+       FROM Users u LEFT JOIN Tasks t ON u.Id = t.UserId AND t.IsDeleted = 0
+       GROUP BY u.Id, u.Username, ...
+     - Dùng cho Tab 2
+   
+   • sp_GetSystemStatistics → Thống kê tổng quan hệ thống
+     - Tổng users, users active/inactive
+     - Tổng tasks, tasks theo status (Todo, Doing, Done)
+     - Tổng tasks quá hạn
+     - Dùng cho Tab 1
+   
+   • sp_UpdateUserStatus → Khóa/Mở khóa user (Toggle IsActive)
+     - UPDATE Users SET IsActive = @IsActive WHERE Id = @UserId
+     - Dùng cho Tab 2
+   
+   • sp_DeleteUser → Xóa user (cascade delete)
+     - DELETE FROM Users WHERE Id = @UserId
+     - CASCADE sẽ tự xóa Tasks và TaskHistory (FK constraint)
+     - Dùng cho Tab 2 - btnXoaUser
+     - Có thể thêm kiểm tra: Không cho phép xóa admin
+   
+   ✅ KHÔNG CẦN (MỨC 1):
+   • sp_GetAllTasksAdmin → Không cần (Tab 3 đã bỏ)
+   • sp_GetTopUsers → Không cần (Tab 4 đã bỏ)
+   • sp_GetLoginLog → Không cần (Tab 5 đã bỏ)
+   • Bảng LoginLog → Không cần
+
+🛡️ Bảo mật (MỨC 1 - Đơn giản):
+   - Chỉ user có username = "admin" mới được truy cập
+   - Validate quyền: Kiểm tra IsAdmin() trước khi mở form
+   - Xác nhận trước khi khóa/xóa user (MessageBox.YesNo)
+   - Không cho phép xóa user admin (kiểm tra Username != "admin")
+
+📋 CẬP NHẬT CẦN THIẾT (MỨC 1 - Đơn giản):
+   
+   ✅ Database (Chỉ cần 4 SP cơ bản):
+   1. sp_GetAllUsers → Lấy danh sách users với thống kê
+   2. sp_GetSystemStatistics → Thống kê tổng quan hệ thống
+   3. sp_UpdateUserStatus → Khóa/Mở khóa user
+   4. sp_DeleteUser → Xóa user
+   
+   ✅ Code (theo pattern hiện tại - rất đơn giản):
+   - frmMain: Thêm button "Admin Panel"
+     - Kiểm tra: btnAdminPanel.Visible = (CurrentUser.GetUsername().ToLower() == "admin")
+     - Click: new frmAdminDashboard().ShowDialog()
+   
+   - frmAdminDashboard: Chỉ 2 Tab
+     - Tab 1 "Tổng quan": 
+       • Gọi sp_GetSystemStatistics
+       • Hiển thị lên Labels (giống frmBaoCao)
+       • btnLamMoi → Reload
+     
+     - Tab 2 "Quản lý người dùng":
+       • Gọi sp_GetAllUsers
+       • Hiển thị trong DataGridView
+       • Format ngày: "dd/MM/yyyy"
+       • Format IsActive: "Hoạt động" / "Bị khóa"
+       • btnKhoaUser → Toggle IsActive
+       • btnXoaUser → Xóa (có xác nhận)
+       • btnTimKiemUser → Filter trong DataTable
+   
+   - Helper: Có thể tạo AdminHelper (tùy chọn)
+     - public static bool IsAdmin() 
+       { return CurrentUser.GetUsername().ToLower() == "admin"; }
+   
+   ✅ UI/UX (Đơn giản):
+   - Chỉ dùng Labels và DataGridView (không cần Chart)
+   - Format dữ liệu giống các form khác
+   - Xác nhận trước khi khóa/xóa (MessageBox)
+   
+   ⚠️ KHÔNG CẦN:
+   - Tab 3, 4, 5 (đã bỏ)
+   - Bảng LoginLog
+   - Chart controls
+   - Export Excel/PDF
+
+📊 VÍ DỤ CODE IMPLEMENTATION (theo pattern hiện tại):
+
+   ┌──────────────────────────────────────────────────────────────┐
+   │ Tab 1 - Load thống kê tổng quan:                            │
+   ├──────────────────────────────────────────────────────────────┤
+   │ private void TaiThongKeTongQuan()                           │
+   │ {                                                           │
+   │     try                                                     │
+   │     {                                                       │
+   │         DataTable bangDuLieu = DatabaseHelper               │
+   │             .ExecuteStoredProcedure("sp_GetSystemStatistics");│
+   │                                                             │
+   │         if (bangDuLieu.Rows.Count > 0)                      │
+   │         {                                                   │
+   │             DataRow dong = bangDuLieu.Rows[0];              │
+   │             lblTongUsers.Text = "Tổng số người dùng: " +    │
+   │                 dong["TongUsers"].ToString();               │
+   │             lblUsersActive.Text = "Người dùng đang hoạt động: "│
+   │                 + dong["UsersActive"].ToString();           │
+   │             // ... các label khác                           │
+   │         }                                                   │
+   │     }                                                       │
+   │     catch (Exception loi)                                   │
+   │     {                                                       │
+   │         MessageBox.Show("Lỗi: " + loi.Message);            │
+   │     }                                                       │
+   │ }                                                           │
+   └──────────────────────────────────────────────────────────────┘
+   
+   📋 LƯU Ý:
+   - Sử dụng stored procedures thay vì direct SQL (bảo mật hơn)
+   - Format dữ liệu giống như các form khác (dd/MM/yyyy, %, ...)
+   - Sử dụng DatabaseHelper.ExecuteStoredProcedure giống frmBaoCao
+
+================================================================================
+
+💡 LƯU Ý VỀ PHIÊN BẢN NÂNG CẤP:
+   Hiện tại chỉ triển khai frmAdminDashboard ở MỨC 1 (2 Tab cơ bản).
+   Nếu muốn nâng cấp cho sinh viên năm 3, có thể thêm:
+   - Tab Log đăng nhập (Audit Trail)
+   - Tab Export Excel/PDF
+   - Tab Biểu đồ trực quan
+   - Tab Cấu hình hệ thống nâng cao
+   - Tab Phân quyền RBAC (nếu thêm Role field)
+
+──────────────────────────────────────────────────────────────────────────────
 

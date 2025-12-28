@@ -36,6 +36,9 @@ namespace QuanLyCongViec
             _currentUserId = userId;
             NewFullName = string.Empty; // Mặc định rỗng
 
+            // Set font Unicode cho form
+            Helpers.FontHelper.SetUnicodeFont(this);
+
             // Khi user sửa Họ tên hoặc Email → kiểm tra thay đổi
             txt_Hoten.TextChanged += (s, e) => KiemTraThayDoiThongTin();
             txt_Email.TextChanged += (s, e) => KiemTraThayDoiThongTin();
@@ -230,15 +233,12 @@ namespace QuanLyCongViec
 
             try
             {
-                // 4. Hash mật khẩu
-                string hashedOldPassword = PasswordHelper.HashPassword(matKhauCu);
-                string hashedNewPassword = PasswordHelper.HashPassword(matKhauMoi);
-
+                // 4. Không hash mật khẩu, lưu dạng plain text
                 SqlParameter[] parameters =
         {
         new SqlParameter("@UserId", _currentUserId),
-        new SqlParameter("@OldPasswordHash", hashedOldPassword),
-        new SqlParameter("@NewPasswordHash", hashedNewPassword)
+        new SqlParameter("@OldPassword", matKhauCu),
+        new SqlParameter("@NewPassword", matKhauMoi)
     };
 
                 // 5. Gọi stored procedure

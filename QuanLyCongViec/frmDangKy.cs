@@ -23,6 +23,8 @@ namespace QuanLyCongViec
         public frmDangKy()
         {
             InitializeComponent();
+            // Set font Unicode cho form
+            Helpers.FontHelper.SetUnicodeFont(this);
         }
         #endregion
 
@@ -64,10 +66,8 @@ namespace QuanLyCongViec
                 }
                 // Lấy thông tin từ form
                 RegistrationData duLieuDangKy = GetRegistrationData();
-                // Hash mật khẩu
-                string maHoaMatKhau = HashPassword(duLieuDangKy.Password);
-                // Đăng ký tài khoản vào database
-                int maNguoiDung = RegisterUserToDatabase(duLieuDangKy, maHoaMatKhau);
+                // Đăng ký tài khoản vào database (không hash password)
+                int maNguoiDung = RegisterUserToDatabase(duLieuDangKy, duLieuDangKy.Password);
                 // Xử lý kết quả đăng ký
                 ProcessRegistrationResult(maNguoiDung, duLieuDangKy);
             }
@@ -93,22 +93,12 @@ namespace QuanLyCongViec
         }
 
         
-        //Hash mật khẩu bằng PasswordHelper
-        
-        //<param name="matKhau">Mật khẩu gốc</param>
-        //<returns>Mật khẩu đã được hash</returns>
-        private string HashPassword(string matKhau)
-        {
-            return PasswordHelper.HashPassword(matKhau);
-        }
-
-        
         //Đăng ký user vào database thông qua stored procedure
         
         //<param name="duLieuDangKy">Thông tin đăng ký</param>
-        //<param name="maHoaMatKhau">Mật khẩu đã hash</param>
+        //<param name="matKhau">Mật khẩu (không hash)</param>
         //<returns>Mã người dùng nếu thành công, mã lỗi nếu thất bại</returns>
-        private int RegisterUserToDatabase(RegistrationData duLieuDangKy, string maHoaMatKhau)
+        private int RegisterUserToDatabase(RegistrationData duLieuDangKy, string matKhau)
         {
             SqlParameter thamSoMaNguoiDung = new SqlParameter("@UserId", SqlDbType.Int)
             {
@@ -118,21 +108,32 @@ namespace QuanLyCongViec
             SqlParameter[] thamSo = new SqlParameter[]
             {
                 new SqlParameter("@Username", duLieuDangKy.Username),
-                new SqlParameter("@PasswordHash", maHoaMatKhau),
+                new SqlParameter("@Password", matKhau),
                 new SqlParameter("@FullName", duLieuDangKy.FullName),
                 new SqlParameter("@Email", duLieuDangKy.Email),
                 thamSoMaNguoiDung
             };
 
-            DatabaseHelper.ExecuteStoredProcedureNonQuery("sp_UserRegister", thamSo);
-
-            // Lấy giá trị mã người dùng từ output parameter
-            if (thamSoMaNguoiDung.Value != null && thamSoMaNguoiDung.Value != DBNull.Value)
+            try
             {
-                return Convert.ToInt32(thamSoMaNguoiDung.Value);
-            }
+                int rowsAffected = DatabaseHelper.ExecuteStoredProcedureNonQuery("sp_UserRegister", thamSo);
 
-            return 0;
+                // Lấy giá trị mã người dùng từ output parameter
+                // Output parameter sẽ được cập nhật sau khi ExecuteNonQuery hoàn thành
+                if (thamSoMaNguoiDung.Value != null && thamSoMaNguoiDung.Value != DBNull.Value)
+                {
+                    int userId = Convert.ToInt32(thamSoMaNguoiDung.Value);
+                    return userId;
+                }
+
+                // Nếu không có output parameter, có thể stored procedure không chạy đúng
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi để debug
+                throw new Exception($"Lỗi khi đăng ký vào database: {ex.Message}", ex);
+            }
         }
 
         

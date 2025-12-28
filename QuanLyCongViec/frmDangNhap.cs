@@ -23,6 +23,8 @@ namespace QuanLyCongViec
         public frmDangNhap()
         {
             InitializeComponent();
+            // Set font Unicode cho form
+            Helpers.FontHelper.SetUnicodeFont(this);
             TestDatabaseConnection();
             LoadRememberedCredentials();
         }
@@ -91,19 +93,19 @@ namespace QuanLyCongViec
         {
             string thongBaoLoi = "❌ Lỗi kết nối database!\n\n" +
                                 "Chi tiết: " + loi.Message + "\n\n" +
-                                "Vui lòng kiểm tra:\n" +
-                                "1. SQL Server đang chạy\n" +
-                                "2. Database 'QuanLyCongViec' đã được tạo\n" +
-                                "3. Connection string trong App.config đúng\n\n" +
+                    "Vui lòng kiểm tra:\n" +
+                    "1. SQL Server đang chạy\n" +
+                    "2. Database 'QuanLyCongViec' đã được tạo\n" +
+                    "3. Connection string trong App.config đúng\n\n" +
                                 "Xem file README_SHARE.md trong project để biết cách setup.";
 
             MessageBox.Show(
                 thongBaoLoi,
-                "Lỗi kết nối",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error
-            );
-        }
+                    "Lỗi kết nối",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+            }
         //Mở form đăng ký và xử lý kết quả
         //Nếu đăng ký thành công, tự động điền username vào form đăng nhập
         private void OpenRegistrationForm()
@@ -227,12 +229,11 @@ namespace QuanLyCongViec
         {
             string tenDangNhap = txtTaiKhoan.Text.Trim();
             string matKhau = txtMatKhau.Text;
-            string maHoaMatKhau = PasswordHelper.HashPassword(matKhau);
 
             SqlParameter[] thamSo = new SqlParameter[]
             {
                 new SqlParameter("@Username", tenDangNhap),
-                new SqlParameter("@PasswordHash", maHoaMatKhau)
+                new SqlParameter("@Password", matKhau)
             };
 
             return DatabaseHelper.ExecuteStoredProcedure("sp_UserLogin", thamSo);

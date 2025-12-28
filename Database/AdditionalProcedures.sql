@@ -17,7 +17,7 @@ GO
 
 CREATE PROCEDURE sp_UserLogin
     @Username NVARCHAR(50),
-    @PasswordHash NVARCHAR(255)
+    @Password NVARCHAR(255)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -28,7 +28,7 @@ BEGIN
         @UserId = Id
     FROM Users
     WHERE Username = @Username 
-        AND PasswordHash = @PasswordHash
+        AND PasswordHash = @Password
         AND IsActive = 1;
     
     IF @UserId IS NOT NULL
@@ -61,7 +61,7 @@ GO
 
 CREATE PROCEDURE sp_UserRegister
     @Username NVARCHAR(50),
-    @PasswordHash NVARCHAR(255),
+    @Password NVARCHAR(255),
     @FullName NVARCHAR(100),
     @Email NVARCHAR(100),
     @UserId INT OUTPUT
@@ -82,7 +82,7 @@ BEGIN
     END
     
     INSERT INTO Users (Username, PasswordHash, FullName, Email, CreatedDate)
-    VALUES (@Username, @PasswordHash, @FullName, @Email, GETDATE());
+    VALUES (@Username, @Password, @FullName, @Email, GETDATE());
     
     SET @UserId = SCOPE_IDENTITY();
 END;
@@ -125,7 +125,7 @@ BEGIN
     
     IF EXISTS (SELECT 1 FROM Users WHERE Email = @Email AND Id != @UserId)
     BEGIN
-        RAISERROR('Email đã được sử dụng bởi người dùng khác', 16, 1);
+        RAISERROR(N'Email đã được sử dụng bởi người dùng khác', 16, 1);
         RETURN;
     END
     
@@ -142,19 +142,19 @@ GO
 
 CREATE PROCEDURE sp_ChangePassword
     @UserId INT,
-    @OldPasswordHash NVARCHAR(255),
-    @NewPasswordHash NVARCHAR(255)
+    @OldPassword NVARCHAR(255),
+    @NewPassword NVARCHAR(255)
 AS
 BEGIN
     SET NOCOUNT ON;
     
-    IF NOT EXISTS (SELECT 1 FROM Users WHERE Id = @UserId AND PasswordHash = @OldPasswordHash)
+    IF NOT EXISTS (SELECT 1 FROM Users WHERE Id = @UserId AND PasswordHash = @OldPassword)
     BEGIN
-        RAISERROR('Mật khẩu cũ không đúng', 16, 1);
+        RAISERROR(N'Mật khẩu cũ không đúng', 16, 1);
         RETURN;
     END
     
-    UPDATE Users SET PasswordHash = @NewPasswordHash WHERE Id = @UserId;
+    UPDATE Users SET PasswordHash = @NewPassword WHERE Id = @UserId;
 END;
 GO
 
@@ -261,7 +261,7 @@ BEGIN
     
     IF NOT EXISTS (SELECT 1 FROM Tasks WHERE Id = @TaskId AND UserId = @UserId)
     BEGIN
-        RAISERROR('Bạn không có quyền xóa công việc này', 16, 1);
+        RAISERROR(N'Bạn không có quyền xóa công việc này', 16, 1);
         RETURN;
     END
     
@@ -270,7 +270,7 @@ BEGIN
     WHERE Id = @TaskId;
     
     INSERT INTO TaskHistory (TaskId, Action, OldStatus, NewStatus, Notes, UserId)
-    SELECT Id, 'Deleted', Status, NULL, 'Công việc đã bị xóa', @UserId
+    SELECT Id, 'Deleted', Status, NULL, N'Công việc đã bị xóa', @UserId
     FROM Tasks WHERE Id = @TaskId;
 END;
 GO
@@ -348,7 +348,7 @@ BEGIN
     
     IF NOT EXISTS (SELECT 1 FROM Tasks WHERE Id = @TaskId AND UserId = @UserId AND IsDeleted = 0)
     BEGIN
-        RAISERROR('Bạn không có quyền sửa công việc này', 16, 1);
+        RAISERROR(N'Bạn không có quyền sửa công việc này', 16, 1);
         RETURN;
     END
     
@@ -447,15 +447,15 @@ BEGIN
         CAST(t.CreatedDate AS DATE) AS NgayBatDau,
         CAST(t.DueDate AS DATE) AS NgayKetThuc,
         CASE 
-            WHEN t.Status = 'Todo' THEN 'Chưa bắt đầu'
-            WHEN t.Status = 'Doing' THEN 'Đang thực hiện'
-            WHEN t.Status = 'Done' THEN 'Hoàn thành'
+            WHEN t.Status = 'Todo' THEN N'Chưa bắt đầu'
+            WHEN t.Status = 'Doing' THEN N'Đang thực hiện'
+            WHEN t.Status = 'Done' THEN N'Hoàn thành'
             ELSE t.Status
         END AS TrangThai,
         CASE 
-            WHEN t.Priority = 'High' THEN 'Cao'
-            WHEN t.Priority = 'Medium' THEN 'Trung bình'
-            WHEN t.Priority = 'Low' THEN 'Thấp'
+            WHEN t.Priority = 'High' THEN N'Cao'
+            WHEN t.Priority = 'Medium' THEN N'Trung bình'
+            WHEN t.Priority = 'Low' THEN N'Thấp'
             ELSE t.Priority
         END AS DoUuTien
     FROM Tasks t
@@ -507,18 +507,18 @@ BEGIN
         'CV' + CAST(th.TaskId AS VARCHAR(10)) AS MaCongViec,
         CAST(th.ActionDate AS DATE) AS NgayTao,
         CASE 
-            WHEN th.Action = 'Created' THEN 'Thêm'
-            WHEN th.Action = 'Updated' THEN 'Sửa'
-            WHEN th.Action = 'StatusChanged' THEN 'Sửa'
-            WHEN th.Action = 'Completed' THEN 'Hoàn thành'
-            WHEN th.Action = 'Deleted' THEN 'Xóa'
+            WHEN th.Action = 'Created' THEN N'Thêm'
+            WHEN th.Action = 'Updated' THEN N'Sửa'
+            WHEN th.Action = 'StatusChanged' THEN N'Sửa'
+            WHEN th.Action = 'Completed' THEN N'Hoàn thành'
+            WHEN th.Action = 'Deleted' THEN N'Xóa'
             ELSE th.Action
         END AS HanhDong,
         t.Priority,
         CASE 
-            WHEN t.Priority = 'High' THEN 'Cao'
-            WHEN t.Priority = 'Medium' THEN 'Trung bình'
-            WHEN t.Priority = 'Low' THEN 'Thấp'
+            WHEN t.Priority = 'High' THEN N'Cao'
+            WHEN t.Priority = 'Medium' THEN N'Trung bình'
+            WHEN t.Priority = 'Low' THEN N'Thấp'
             ELSE t.Priority
         END AS DoUuTien,
         ISNULL(th.Notes, '') AS ChiTiet
@@ -551,18 +551,18 @@ BEGIN
             'CV' + CAST(th.TaskId AS VARCHAR(10)) AS MaCongViec,
             CAST(th.ActionDate AS DATE) AS NgayTao,
             CASE 
-                WHEN th.Action = 'Created' THEN 'Thêm'
-                WHEN th.Action = 'Updated' THEN 'Sửa'
-                WHEN th.Action = 'StatusChanged' THEN 'Sửa'
-                WHEN th.Action = 'Completed' THEN 'Hoàn thành'
-                WHEN th.Action = 'Deleted' THEN 'Xóa'
+                WHEN th.Action = 'Created' THEN N'Thêm'
+                WHEN th.Action = 'Updated' THEN N'Sửa'
+                WHEN th.Action = 'StatusChanged' THEN N'Sửa'
+                WHEN th.Action = 'Completed' THEN N'Hoàn thành'
+                WHEN th.Action = 'Deleted' THEN N'Xóa'
                 ELSE th.Action
             END AS HanhDong,
             t.Priority,
             CASE 
-                WHEN t.Priority = 'High' THEN 'Cao'
-                WHEN t.Priority = 'Medium' THEN 'Trung bình'
-                WHEN t.Priority = 'Low' THEN 'Thấp'
+                WHEN t.Priority = 'High' THEN N'Cao'
+                WHEN t.Priority = 'Medium' THEN N'Trung bình'
+                WHEN t.Priority = 'Low' THEN N'Thấp'
                 ELSE t.Priority
             END AS DoUuTien,
             ISNULL(th.Notes, '') AS ChiTiet
@@ -582,18 +582,18 @@ BEGIN
             'CV' + CAST(th.TaskId AS VARCHAR(10)) AS MaCongViec,
             CAST(th.ActionDate AS DATE) AS NgayTao,
             CASE 
-                WHEN th.Action = 'Created' THEN 'Thêm'
-                WHEN th.Action = 'Updated' THEN 'Sửa'
-                WHEN th.Action = 'StatusChanged' THEN 'Sửa'
-                WHEN th.Action = 'Completed' THEN 'Hoàn thành'
-                WHEN th.Action = 'Deleted' THEN 'Xóa'
+                WHEN th.Action = 'Created' THEN N'Thêm'
+                WHEN th.Action = 'Updated' THEN N'Sửa'
+                WHEN th.Action = 'StatusChanged' THEN N'Sửa'
+                WHEN th.Action = 'Completed' THEN N'Hoàn thành'
+                WHEN th.Action = 'Deleted' THEN N'Xóa'
                 ELSE th.Action
             END AS HanhDong,
             t.Priority,
             CASE 
-                WHEN t.Priority = 'High' THEN 'Cao'
-                WHEN t.Priority = 'Medium' THEN 'Trung bình'
-                WHEN t.Priority = 'Low' THEN 'Thấp'
+                WHEN t.Priority = 'High' THEN N'Cao'
+                WHEN t.Priority = 'Medium' THEN N'Trung bình'
+                WHEN t.Priority = 'Low' THEN N'Thấp'
                 ELSE t.Priority
             END AS DoUuTien,
             ISNULL(th.Notes, '') AS ChiTiet
@@ -726,5 +726,457 @@ END;
 GO
 
 PRINT 'Các Stored Procedures bổ sung đã được tạo thành công!';
+GO
+
+-- =============================================
+-- PHẦN BỔ SUNG: SỬA UNICODE ENCODING
+-- Sửa collation database và các cột để hỗ trợ tiếng Việt
+-- =============================================
+PRINT '';
+PRINT '========================================';
+PRINT 'BƯỚC BỔ SUNG: SỬA UNICODE ENCODING';
+PRINT '========================================';
+
+USE QuanLyCongViec;
+GO
+
+-- Xóa các index và unique constraint trước khi đổi collation
+PRINT 'Đang xóa các index và unique constraint...';
+
+-- Xóa index trên bảng Users
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Users_Username' AND object_id = OBJECT_ID('Users'))
+    DROP INDEX IX_Users_Username ON Users;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Users_Email' AND object_id = OBJECT_ID('Users'))
+    DROP INDEX IX_Users_Email ON Users;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Users_IsActive' AND object_id = OBJECT_ID('Users'))
+    DROP INDEX IX_Users_IsActive ON Users;
+GO
+
+-- Xóa unique constraint trên Username
+DECLARE @ConstraintName NVARCHAR(200);
+SELECT TOP 1 @ConstraintName = kc.name 
+FROM sys.key_constraints kc
+INNER JOIN sys.index_columns ic ON kc.parent_object_id = ic.object_id AND kc.unique_index_id = ic.index_id
+INNER JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+WHERE kc.parent_object_id = OBJECT_ID('Users') 
+    AND kc.type = 'UQ' 
+    AND c.name = 'Username';
+IF @ConstraintName IS NOT NULL
+    EXEC('ALTER TABLE Users DROP CONSTRAINT ' + @ConstraintName);
+GO
+
+-- Xóa unique constraint trên Email
+DECLARE @ConstraintName2 NVARCHAR(200);
+SELECT TOP 1 @ConstraintName2 = kc.name 
+FROM sys.key_constraints kc
+INNER JOIN sys.index_columns ic ON kc.parent_object_id = ic.object_id AND kc.unique_index_id = ic.index_id
+INNER JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+WHERE kc.parent_object_id = OBJECT_ID('Users') 
+    AND kc.type = 'UQ' 
+    AND c.name = 'Email';
+IF @ConstraintName2 IS NOT NULL
+    EXEC('ALTER TABLE Users DROP CONSTRAINT ' + @ConstraintName2);
+GO
+
+-- Xóa index trên bảng Tasks
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_UserId' AND object_id = OBJECT_ID('Tasks'))
+    DROP INDEX IX_Tasks_UserId ON Tasks;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_Status' AND object_id = OBJECT_ID('Tasks'))
+    DROP INDEX IX_Tasks_Status ON Tasks;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_Priority' AND object_id = OBJECT_ID('Tasks'))
+    DROP INDEX IX_Tasks_Priority ON Tasks;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_Category' AND object_id = OBJECT_ID('Tasks'))
+    DROP INDEX IX_Tasks_Category ON Tasks;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_DueDate' AND object_id = OBJECT_ID('Tasks'))
+    DROP INDEX IX_Tasks_DueDate ON Tasks;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_Status_DueDate' AND object_id = OBJECT_ID('Tasks'))
+    DROP INDEX IX_Tasks_Status_DueDate ON Tasks;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_IsDeleted' AND object_id = OBJECT_ID('Tasks'))
+    DROP INDEX IX_Tasks_IsDeleted ON Tasks;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_UserId_IsDeleted' AND object_id = OBJECT_ID('Tasks'))
+    DROP INDEX IX_Tasks_UserId_IsDeleted ON Tasks;
+GO
+
+-- Xóa index trên bảng TaskHistory
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_TaskHistory_TaskId' AND object_id = OBJECT_ID('TaskHistory'))
+    DROP INDEX IX_TaskHistory_TaskId ON TaskHistory;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_TaskHistory_UserId' AND object_id = OBJECT_ID('TaskHistory'))
+    DROP INDEX IX_TaskHistory_UserId ON TaskHistory;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_TaskHistory_ActionDate' AND object_id = OBJECT_ID('TaskHistory'))
+    DROP INDEX IX_TaskHistory_ActionDate ON TaskHistory;
+GO
+
+-- Xóa index trên bảng SystemSettings (nếu có)
+IF OBJECT_ID('SystemSettings', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Settings_SettingKey' AND object_id = OBJECT_ID('SystemSettings'))
+        DROP INDEX IX_Settings_SettingKey ON SystemSettings;
+    
+    -- Xóa unique constraint trên SettingKey
+    DECLARE @ConstraintName3 NVARCHAR(200);
+    SELECT TOP 1 @ConstraintName3 = kc.name 
+    FROM sys.key_constraints kc
+    INNER JOIN sys.index_columns ic ON kc.parent_object_id = ic.object_id AND kc.unique_index_id = ic.index_id
+    INNER JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+    WHERE kc.parent_object_id = OBJECT_ID('SystemSettings') 
+        AND kc.type = 'UQ' 
+        AND c.name = 'SettingKey';
+    IF @ConstraintName3 IS NOT NULL
+        EXEC('ALTER TABLE SystemSettings DROP CONSTRAINT ' + @ConstraintName3);
+END
+GO
+
+PRINT 'Đã xóa các index và unique constraint';
+PRINT '';
+
+-- Xóa các CHECK constraints trước khi đổi collation
+PRINT 'Đang xóa các CHECK constraints...';
+
+IF OBJECT_ID('CK_Users_Email', 'C') IS NOT NULL
+    ALTER TABLE Users DROP CONSTRAINT CK_Users_Email;
+GO
+
+IF OBJECT_ID('CK_Users_Username', 'C') IS NOT NULL
+    ALTER TABLE Users DROP CONSTRAINT CK_Users_Username;
+GO
+
+IF OBJECT_ID('CK_Tasks_Priority', 'C') IS NOT NULL
+    ALTER TABLE Tasks DROP CONSTRAINT CK_Tasks_Priority;
+GO
+
+IF OBJECT_ID('CK_Tasks_Status', 'C') IS NOT NULL
+    ALTER TABLE Tasks DROP CONSTRAINT CK_Tasks_Status;
+GO
+
+IF OBJECT_ID('CK_Tasks_Category', 'C') IS NOT NULL
+    ALTER TABLE Tasks DROP CONSTRAINT CK_Tasks_Category;
+GO
+
+IF OBJECT_ID('CK_Tasks_Title', 'C') IS NOT NULL
+    ALTER TABLE Tasks DROP CONSTRAINT CK_Tasks_Title;
+GO
+
+IF OBJECT_ID('CK_TaskHistory_Action', 'C') IS NOT NULL
+    ALTER TABLE TaskHistory DROP CONSTRAINT CK_TaskHistory_Action;
+GO
+
+PRINT 'Đã xóa các CHECK constraints';
+PRINT '';
+
+-- Đổi collation của database sang Vietnamese_CI_AS (hỗ trợ tiếng Việt)
+USE master;
+GO
+
+ALTER DATABASE QuanLyCongViec COLLATE Vietnamese_CI_AS;
+GO
+
+USE QuanLyCongViec;
+GO
+
+PRINT 'Đã đổi collation database sang Vietnamese_CI_AS';
+PRINT '';
+
+-- Sửa collation cho bảng Users
+IF OBJECT_ID('Users', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE Users
+    ALTER COLUMN Username NVARCHAR(50) COLLATE Vietnamese_CI_AS NOT NULL;
+    
+    ALTER TABLE Users
+    ALTER COLUMN PasswordHash NVARCHAR(255) COLLATE Vietnamese_CI_AS NOT NULL;
+    
+    ALTER TABLE Users
+    ALTER COLUMN FullName NVARCHAR(100) COLLATE Vietnamese_CI_AS NOT NULL;
+    
+    ALTER TABLE Users
+    ALTER COLUMN Email NVARCHAR(100) COLLATE Vietnamese_CI_AS NOT NULL;
+END
+GO
+
+-- Sửa collation cho bảng Tasks
+IF OBJECT_ID('Tasks', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE Tasks
+    ALTER COLUMN Title NVARCHAR(200) COLLATE Vietnamese_CI_AS NOT NULL;
+    
+    ALTER TABLE Tasks
+    ALTER COLUMN Description NVARCHAR(MAX) COLLATE Vietnamese_CI_AS;
+    
+    ALTER TABLE Tasks
+    ALTER COLUMN Priority NVARCHAR(20) COLLATE Vietnamese_CI_AS NOT NULL;
+    
+    ALTER TABLE Tasks
+    ALTER COLUMN Status NVARCHAR(20) COLLATE Vietnamese_CI_AS NOT NULL;
+    
+    ALTER TABLE Tasks
+    ALTER COLUMN Category NVARCHAR(20) COLLATE Vietnamese_CI_AS NOT NULL;
+END
+GO
+
+-- Sửa collation cho bảng TaskHistory
+IF OBJECT_ID('TaskHistory', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE TaskHistory
+    ALTER COLUMN Action NVARCHAR(50) COLLATE Vietnamese_CI_AS NOT NULL;
+    
+    ALTER TABLE TaskHistory
+    ALTER COLUMN OldStatus NVARCHAR(20) COLLATE Vietnamese_CI_AS;
+    
+    ALTER TABLE TaskHistory
+    ALTER COLUMN NewStatus NVARCHAR(20) COLLATE Vietnamese_CI_AS;
+    
+    ALTER TABLE TaskHistory
+    ALTER COLUMN Notes NVARCHAR(500) COLLATE Vietnamese_CI_AS;
+END
+GO
+
+-- Sửa collation cho bảng SystemSettings (nếu có)
+IF OBJECT_ID('SystemSettings', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE SystemSettings
+    ALTER COLUMN SettingKey NVARCHAR(100) COLLATE Vietnamese_CI_AS NOT NULL;
+    
+    ALTER TABLE SystemSettings
+    ALTER COLUMN SettingValue NVARCHAR(255) COLLATE Vietnamese_CI_AS NOT NULL;
+    
+    ALTER TABLE SystemSettings
+    ALTER COLUMN Description NVARCHAR(500) COLLATE Vietnamese_CI_AS;
+END
+GO
+
+PRINT 'Đã sửa collation các cột sang Vietnamese_CI_AS';
+PRINT '';
+
+-- Tạo lại các index và unique constraint sau khi đổi collation
+PRINT 'Đang tạo lại các index và unique constraint...';
+
+-- Tạo lại index và unique constraint cho bảng Users
+IF OBJECT_ID('Users', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Users_Username' AND object_id = OBJECT_ID('Users'))
+        CREATE INDEX IX_Users_Username ON Users(Username);
+    
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Users_Email' AND object_id = OBJECT_ID('Users'))
+        CREATE INDEX IX_Users_Email ON Users(Email);
+    
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Users_IsActive' AND object_id = OBJECT_ID('Users'))
+        CREATE INDEX IX_Users_IsActive ON Users(IsActive);
+    
+    -- Tạo lại unique constraint trên Username
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.key_constraints kc
+        INNER JOIN sys.index_columns ic ON kc.parent_object_id = ic.object_id AND kc.unique_index_id = ic.index_id
+        INNER JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+        WHERE kc.parent_object_id = OBJECT_ID('Users') AND kc.type = 'UQ' AND c.name = 'Username'
+    )
+        ALTER TABLE Users ADD CONSTRAINT UQ_Users_Username UNIQUE (Username);
+    
+    -- Tạo lại unique constraint trên Email
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.key_constraints kc
+        INNER JOIN sys.index_columns ic ON kc.parent_object_id = ic.object_id AND kc.unique_index_id = ic.index_id
+        INNER JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+        WHERE kc.parent_object_id = OBJECT_ID('Users') AND kc.type = 'UQ' AND c.name = 'Email'
+    )
+        ALTER TABLE Users ADD CONSTRAINT UQ_Users_Email UNIQUE (Email);
+END
+GO
+
+-- Tạo lại index cho bảng Tasks
+IF OBJECT_ID('Tasks', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_UserId' AND object_id = OBJECT_ID('Tasks'))
+        CREATE INDEX IX_Tasks_UserId ON Tasks(UserId);
+    
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_Status' AND object_id = OBJECT_ID('Tasks'))
+        CREATE INDEX IX_Tasks_Status ON Tasks(Status);
+    
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_Priority' AND object_id = OBJECT_ID('Tasks'))
+        CREATE INDEX IX_Tasks_Priority ON Tasks(Priority);
+    
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_Category' AND object_id = OBJECT_ID('Tasks'))
+        CREATE INDEX IX_Tasks_Category ON Tasks(Category);
+    
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_DueDate' AND object_id = OBJECT_ID('Tasks'))
+        CREATE INDEX IX_Tasks_DueDate ON Tasks(DueDate);
+    
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_Status_DueDate' AND object_id = OBJECT_ID('Tasks'))
+        CREATE INDEX IX_Tasks_Status_DueDate ON Tasks(Status, DueDate);
+    
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_IsDeleted' AND object_id = OBJECT_ID('Tasks'))
+        CREATE INDEX IX_Tasks_IsDeleted ON Tasks(IsDeleted);
+    
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_UserId_IsDeleted' AND object_id = OBJECT_ID('Tasks'))
+        CREATE INDEX IX_Tasks_UserId_IsDeleted ON Tasks(UserId, IsDeleted);
+END
+GO
+
+-- Tạo lại index cho bảng TaskHistory
+IF OBJECT_ID('TaskHistory', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_TaskHistory_TaskId' AND object_id = OBJECT_ID('TaskHistory'))
+        CREATE INDEX IX_TaskHistory_TaskId ON TaskHistory(TaskId);
+    
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_TaskHistory_UserId' AND object_id = OBJECT_ID('TaskHistory'))
+        CREATE INDEX IX_TaskHistory_UserId ON TaskHistory(UserId);
+    
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_TaskHistory_ActionDate' AND object_id = OBJECT_ID('TaskHistory'))
+        CREATE INDEX IX_TaskHistory_ActionDate ON TaskHistory(ActionDate DESC);
+END
+GO
+
+-- Tạo lại index và unique constraint cho bảng SystemSettings (nếu có)
+IF OBJECT_ID('SystemSettings', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Settings_SettingKey' AND object_id = OBJECT_ID('SystemSettings'))
+        CREATE INDEX IX_Settings_SettingKey ON SystemSettings(SettingKey);
+    
+    -- Tạo lại unique constraint trên SettingKey
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.key_constraints kc
+        INNER JOIN sys.index_columns ic ON kc.parent_object_id = ic.object_id AND kc.unique_index_id = ic.index_id
+        INNER JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+        WHERE kc.parent_object_id = OBJECT_ID('SystemSettings') AND kc.type = 'UQ' AND c.name = 'SettingKey'
+    )
+        ALTER TABLE SystemSettings ADD CONSTRAINT UQ_Settings_SettingKey UNIQUE (SettingKey);
+END
+GO
+
+-- Tạo lại các CHECK constraints với prefix N cho Unicode
+PRINT 'Đang tạo lại các CHECK constraints...';
+
+IF OBJECT_ID('Users', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_Users_Email')
+        ALTER TABLE Users ADD CONSTRAINT CK_Users_Email CHECK (Email LIKE N'%@%.%');
+    
+    IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_Users_Username')
+        ALTER TABLE Users ADD CONSTRAINT CK_Users_Username CHECK (LEN(Username) >= 3);
+END
+GO
+
+IF OBJECT_ID('Tasks', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_Tasks_Priority')
+        ALTER TABLE Tasks ADD CONSTRAINT CK_Tasks_Priority CHECK (Priority IN (N'High', N'Medium', N'Low'));
+    
+    IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_Tasks_Status')
+        ALTER TABLE Tasks ADD CONSTRAINT CK_Tasks_Status CHECK (Status IN (N'Todo', N'Doing', N'Done'));
+    
+    IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_Tasks_Category')
+        ALTER TABLE Tasks ADD CONSTRAINT CK_Tasks_Category CHECK (Category IN (N'Work', N'Personal', N'Study'));
+    
+    IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_Tasks_Title')
+        ALTER TABLE Tasks ADD CONSTRAINT CK_Tasks_Title CHECK (LEN(TRIM(Title)) > 0);
+END
+GO
+
+IF OBJECT_ID('TaskHistory', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_TaskHistory_Action')
+        ALTER TABLE TaskHistory ADD CONSTRAINT CK_TaskHistory_Action CHECK (Action IN (N'Created', N'Updated', N'Completed', N'Deleted', N'StatusChanged'));
+END
+GO
+
+PRINT 'Đã tạo lại các CHECK constraints';
+PRINT '';
+
+PRINT 'Đã tạo lại các CHECK constraints';
+PRINT '';
+
+-- Sửa dữ liệu cũ bị lỗi encoding trong bảng TaskHistory
+PRINT 'Đang sửa dữ liệu cũ bị lỗi encoding trong TaskHistory...';
+
+-- Sửa các ký tự bị lỗi phổ biến trong Notes
+UPDATE TaskHistory
+SET Notes = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+    Notes,
+    'C?ng', N'Công'),
+    'vi?c', N'việc'),
+    'h?c', N'học'),
+    't?p', N'tập'),
+    'kh?m', N'khám'),
+    's?c', N'sức'),
+    'kho?', N'khỏe'),
+    'l?p', N'lập'),
+    'trình', N'trình'),
+    '?ng', N'ộng')
+WHERE Notes LIKE '%?%';
+
+UPDATE TaskHistory
+SET Notes = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+    Notes,
+    '?n', N'ơn'),
+    '?i', N'ời'),
+    '?a', N'ưa'),
+    '?u', N'ưu'),
+    '?o', N'ộ'),
+    '?e', N'ế'),
+    '?y', N'ấy'),
+    '?t', N'ất'),
+    '?', N'ộ')
+WHERE Notes LIKE '%?%';
+
+-- Sửa các cụm từ phổ biến trong Notes (ưu tiên sửa cụm từ dài trước)
+UPDATE TaskHistory
+SET Notes = REPLACE(Notes, 'Công việc được t?o m?i', N'Công việc được tạo mới')
+WHERE Notes LIKE '%Công việc được t?o m?i%';
+
+UPDATE TaskHistory
+SET Notes = REPLACE(Notes, 'Công việc được c?p nh?t', N'Công việc được cập nhật')
+WHERE Notes LIKE '%Công việc được c?p nh?t%';
+
+UPDATE TaskHistory
+SET Notes = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+    Notes,
+    'Công vi?c', N'Công việc'),
+    't?o m?i', N'tạo mới'),
+    'c?p nh?t', N'cập nhật'),
+    'thay ??i', N'thay đổi'),
+    'tr?ng thái', N'trạng thái'),
+    '??u tiên', N'ưu tiên'),
+    'm? t?', N'mô tả'),
+    'ngày t?o', N'ngày tạo'),
+    'ngày hoàn thành', N'ngày hoàn thành'),
+    '?ã', N'đã')
+WHERE Notes LIKE '%?%';
+
+DECLARE @TaskHistoryFixed INT = @@ROWCOUNT;
+IF @TaskHistoryFixed > 0
+    PRINT 'Đã sửa ' + CAST(@TaskHistoryFixed AS VARCHAR(10)) + ' records trong bảng TaskHistory';
+ELSE
+    PRINT 'Không có dữ liệu TaskHistory cần sửa';
+PRINT '';
+
+PRINT '========================================';
+PRINT 'HOÀN THÀNH SỬA UNICODE ENCODING';
+PRINT '========================================';
+PRINT '✅ Đã sửa collation database sang Vietnamese_CI_AS';
+PRINT '✅ Đã sửa collation tất cả các cột NVARCHAR';
+PRINT '✅ Đã tạo lại các index và constraints';
+PRINT '✅ Đã sửa dữ liệu cũ bị lỗi encoding trong TaskHistory';
+PRINT '========================================';
 GO
 

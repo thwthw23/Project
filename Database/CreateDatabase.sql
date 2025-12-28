@@ -3,10 +3,16 @@
 -- Hệ thống quản lý công việc với kiến trúc 3 lớp
 -- =============================================
 
--- Tạo Database
+-- Tạo Database với collation hỗ trợ tiếng Việt
 IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'QuanLyCongViec')
 BEGIN
-    CREATE DATABASE QuanLyCongViec;
+    CREATE DATABASE QuanLyCongViec
+    COLLATE Vietnamese_CI_AS;
+END
+ELSE
+BEGIN
+    -- Nếu database đã tồn tại, đổi collation
+    ALTER DATABASE QuanLyCongViec COLLATE Vietnamese_CI_AS;
 END
 GO
 
@@ -16,6 +22,57 @@ GO
 -- =============================================
 -- 1. BẢNG USERS - Quản lý người dùng
 -- =============================================
+-- Xóa foreign key constraints trước khi drop table
+IF OBJECT_ID('FK_Tasks_Users', 'F') IS NOT NULL
+    ALTER TABLE Tasks DROP CONSTRAINT FK_Tasks_Users;
+GO
+
+IF OBJECT_ID('FK_TaskHistory_Tasks', 'F') IS NOT NULL
+    ALTER TABLE TaskHistory DROP CONSTRAINT FK_TaskHistory_Tasks;
+GO
+
+IF OBJECT_ID('FK_TaskHistory_Users', 'F') IS NOT NULL
+    ALTER TABLE TaskHistory DROP CONSTRAINT FK_TaskHistory_Users;
+GO
+
+-- Xóa index trước khi drop table
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Users_Username' AND object_id = OBJECT_ID('Users'))
+    DROP INDEX IX_Users_Username ON Users;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Users_Email' AND object_id = OBJECT_ID('Users'))
+    DROP INDEX IX_Users_Email ON Users;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Users_IsActive' AND object_id = OBJECT_ID('Users'))
+    DROP INDEX IX_Users_IsActive ON Users;
+GO
+
+-- Xóa unique constraints
+DECLARE @ConstraintName NVARCHAR(200);
+SELECT TOP 1 @ConstraintName = name FROM sys.key_constraints 
+WHERE parent_object_id = OBJECT_ID('Users') AND type = 'UQ' AND name LIKE '%Username%';
+IF @ConstraintName IS NOT NULL
+    EXEC('ALTER TABLE Users DROP CONSTRAINT ' + @ConstraintName);
+GO
+
+DECLARE @ConstraintName2 NVARCHAR(200);
+SELECT TOP 1 @ConstraintName2 = name FROM sys.key_constraints 
+WHERE parent_object_id = OBJECT_ID('Users') AND type = 'UQ' AND name LIKE '%Email%';
+IF @ConstraintName2 IS NOT NULL
+    EXEC('ALTER TABLE Users DROP CONSTRAINT ' + @ConstraintName2);
+GO
+
+-- Xóa CHECK constraints
+IF OBJECT_ID('CK_Users_Email', 'C') IS NOT NULL
+    ALTER TABLE Users DROP CONSTRAINT CK_Users_Email;
+GO
+
+IF OBJECT_ID('CK_Users_Username', 'C') IS NOT NULL
+    ALTER TABLE Users DROP CONSTRAINT CK_Users_Username;
+GO
+
+-- Bây giờ mới drop table
 IF OBJECT_ID('Users', 'U') IS NOT NULL
     DROP TABLE Users;
 GO
@@ -46,6 +103,67 @@ GO
 -- =============================================
 -- 2. BẢNG TASKS - Quản lý công việc
 -- =============================================
+-- Xóa foreign key constraints trước
+IF OBJECT_ID('FK_TaskHistory_Tasks', 'F') IS NOT NULL
+    ALTER TABLE TaskHistory DROP CONSTRAINT FK_TaskHistory_Tasks;
+GO
+
+-- Xóa index trước khi drop table
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_UserId' AND object_id = OBJECT_ID('Tasks'))
+    DROP INDEX IX_Tasks_UserId ON Tasks;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_Status' AND object_id = OBJECT_ID('Tasks'))
+    DROP INDEX IX_Tasks_Status ON Tasks;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_Priority' AND object_id = OBJECT_ID('Tasks'))
+    DROP INDEX IX_Tasks_Priority ON Tasks;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_Category' AND object_id = OBJECT_ID('Tasks'))
+    DROP INDEX IX_Tasks_Category ON Tasks;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_DueDate' AND object_id = OBJECT_ID('Tasks'))
+    DROP INDEX IX_Tasks_DueDate ON Tasks;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_Status_DueDate' AND object_id = OBJECT_ID('Tasks'))
+    DROP INDEX IX_Tasks_Status_DueDate ON Tasks;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_IsDeleted' AND object_id = OBJECT_ID('Tasks'))
+    DROP INDEX IX_Tasks_IsDeleted ON Tasks;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_UserId_IsDeleted' AND object_id = OBJECT_ID('Tasks'))
+    DROP INDEX IX_Tasks_UserId_IsDeleted ON Tasks;
+GO
+
+-- Xóa CHECK constraints
+IF OBJECT_ID('CK_Tasks_Priority', 'C') IS NOT NULL
+    ALTER TABLE Tasks DROP CONSTRAINT CK_Tasks_Priority;
+GO
+
+IF OBJECT_ID('CK_Tasks_Status', 'C') IS NOT NULL
+    ALTER TABLE Tasks DROP CONSTRAINT CK_Tasks_Status;
+GO
+
+IF OBJECT_ID('CK_Tasks_Category', 'C') IS NOT NULL
+    ALTER TABLE Tasks DROP CONSTRAINT CK_Tasks_Category;
+GO
+
+IF OBJECT_ID('CK_Tasks_Title', 'C') IS NOT NULL
+    ALTER TABLE Tasks DROP CONSTRAINT CK_Tasks_Title;
+GO
+
+-- Xóa foreign key constraint
+IF OBJECT_ID('FK_Tasks_Users', 'F') IS NOT NULL
+    ALTER TABLE Tasks DROP CONSTRAINT FK_Tasks_Users;
+GO
+
+-- Bây giờ mới drop table
 IF OBJECT_ID('Tasks', 'U') IS NOT NULL
     DROP TABLE Tasks;
 GO
@@ -90,6 +208,34 @@ GO
 -- =============================================
 -- 3. BẢNG TASKHISTORY - Lịch sử thay đổi công việc
 -- =============================================
+-- Xóa index trước khi drop table
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_TaskHistory_TaskId' AND object_id = OBJECT_ID('TaskHistory'))
+    DROP INDEX IX_TaskHistory_TaskId ON TaskHistory;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_TaskHistory_UserId' AND object_id = OBJECT_ID('TaskHistory'))
+    DROP INDEX IX_TaskHistory_UserId ON TaskHistory;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_TaskHistory_ActionDate' AND object_id = OBJECT_ID('TaskHistory'))
+    DROP INDEX IX_TaskHistory_ActionDate ON TaskHistory;
+GO
+
+-- Xóa foreign key constraints
+IF OBJECT_ID('FK_TaskHistory_Tasks', 'F') IS NOT NULL
+    ALTER TABLE TaskHistory DROP CONSTRAINT FK_TaskHistory_Tasks;
+GO
+
+IF OBJECT_ID('FK_TaskHistory_Users', 'F') IS NOT NULL
+    ALTER TABLE TaskHistory DROP CONSTRAINT FK_TaskHistory_Users;
+GO
+
+-- Xóa CHECK constraints
+IF OBJECT_ID('CK_TaskHistory_Action', 'C') IS NOT NULL
+    ALTER TABLE TaskHistory DROP CONSTRAINT CK_TaskHistory_Action;
+GO
+
+-- Bây giờ mới drop table
 IF OBJECT_ID('TaskHistory', 'U') IS NOT NULL
     DROP TABLE TaskHistory;
 GO
@@ -123,6 +269,20 @@ GO
 -- =============================================
 -- 4. BẢNG SETTINGS - Cấu hình hệ thống
 -- =============================================
+-- Xóa index và unique constraint trước
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Settings_SettingKey' AND object_id = OBJECT_ID('Settings'))
+    DROP INDEX IX_Settings_SettingKey ON Settings;
+GO
+
+-- Xóa unique constraint trên SettingKey
+DECLARE @ConstraintName3 NVARCHAR(200);
+SELECT TOP 1 @ConstraintName3 = name FROM sys.key_constraints 
+WHERE parent_object_id = OBJECT_ID('Settings') AND type = 'UQ';
+IF @ConstraintName3 IS NOT NULL
+    EXEC('ALTER TABLE Settings DROP CONSTRAINT ' + @ConstraintName3);
+GO
+
+-- Bây giờ mới drop table
 IF OBJECT_ID('Settings', 'U') IS NOT NULL
     DROP TABLE Settings;
 GO
@@ -389,7 +549,7 @@ BEGIN
         'Created',
         NULL,
         Status,
-        'Công việc được tạo mới',
+        N'Công việc được tạo mới',
         UserId
     FROM inserted;
 END;
@@ -418,7 +578,7 @@ BEGIN
         END,
         d.Status,
         i.Status,
-        'Công việc được cập nhật',
+        N'Công việc được cập nhật',
         i.UserId
     FROM inserted i
     INNER JOIN deleted d ON i.Id = d.Id

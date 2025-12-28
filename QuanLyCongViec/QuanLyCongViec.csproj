@@ -79,6 +79,7 @@
       <DependentUpon>frmThemSuaTask.cs</DependentUpon>
     </Compile>
     <Compile Include="Helpers\CurrentUser.cs" />
+    <Compile Include="Helpers\FontHelper.cs" />
     <Compile Include="Helpers\PasswordHelper.cs" />
     <Compile Include="Helpers\SystemSettings.cs" />
     <Compile Include="Helpers\ValidationLimits.cs" />
