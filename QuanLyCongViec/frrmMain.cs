@@ -129,7 +129,7 @@ namespace QuanLyCongViec
         // Mở form báo cáo
         private void btn_BaoCao_Click(object sender, EventArgs e)
         {
-            frmBaoCao reportForm = new frmBaoCao();
+            frmBaoCao reportForm = new frmBaoCao(_currentUserId);
             reportForm.ShowDialog();
         }
 
@@ -143,7 +143,7 @@ namespace QuanLyCongViec
         // Mở form quản lý công việc
         private void btn_QuanLyCongViec_Click(object sender, EventArgs e)
         {
-            frmThemSuaTask taskForm = new frmThemSuaTask();
+            frmThemSuaTask taskForm = new frmThemSuaTask(_currentUserId);
             taskForm.ShowDialog();
             CapNhatDashboard(); // Refresh sau khi đóng
         }

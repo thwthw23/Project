@@ -1,159 +1,368 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Data;
+using System.Data.SqlClient;
 using System.Windows.Forms;
+using QuanLyCongViec.DataAccess;
+using QuanLyCongViec.Helpers;
 
 namespace QuanLyCongViec
 {
     public partial class frmThemSuaTask : Form
     {
-        private List<CongViec> danhSachCongViec;
+        private int _userId;
+        private int _selectedTaskId = 0;
 
-        public frmThemSuaTask()
+        public frmThemSuaTask(int userId = 0)
         {
             InitializeComponent();
-            KhoiTaoDuLieuMau();
-            HienThiDanhSach();
-        }
-
-        private void KhoiTaoDuLieuMau()
-        {
-            danhSachCongViec = new List<CongViec>
+            _userId = userId;
+            Helpers.FontHelper.SetUnicodeFont(this);
+            Helpers.FontHelper.SetUnicodeFontForDataGridView(dgvCongViec);
+            
+            // Lấy UserId đầu tiên nếu không được truyền vào
+            if (_userId == 0)
             {
-                new CongViec { MaCongViec = "CV01", TenCongViec = "Phân tích yêu cầu hệ thống", TrangThai = "Chưa bắt đầu", NguoiPhuTrach = "Nguyễn Văn A", NgayBatDau = new DateTime(2025, 11, 01), NgayKetThuc = new DateTime(2025, 11, 10), DoUuTien = "Cao", ThoiGianDuKien = 40 },
-                new CongViec { MaCongViec = "CV02", TenCongViec = "Thiết kế giao diện người dùng", TrangThai = "Đang thực hiện", NguoiPhuTrach = "Trần Thị B", NgayBatDau = new DateTime(2025, 11, 05), NgayKetThuc = new DateTime(2025, 11, 15), DoUuTien = "Trung bình", ThoiGianDuKien = 30 },
-                new CongViec { MaCongViec = "CV03", TenCongViec = "Lập trình module đăng nhập", TrangThai = "Hoàn thành", NguoiPhuTrach = "Lê Văn C", NgayBatDau = new DateTime(2025, 11, 10), NgayKetThuc = new DateTime(2025, 11, 20), DoUuTien = "Cao", ThoiGianDuKien = 25 },
-                new CongViec { MaCongViec = "CV04", TenCongViec = "Kiểm thử tích hợp", TrangThai = "Chưa bắt đầu", NguoiPhuTrach = "Phạm Thị D", NgayBatDau = new DateTime(2025, 11, 25), NgayKetThuc = new DateTime(2025, 12, 05), DoUuTien = "Cao", ThoiGianDuKien = 35 },
-                new CongViec { MaCongViec = "CV05", TenCongViec = "Viết tài liệu hướng dẫn sử dụng", TrangThai = "Đang thực hiện", NguoiPhuTrach = "Hoàng Văn E", NgayBatDau = new DateTime(2025, 11, 15), NgayKetThuc = new DateTime(2025, 12, 01), DoUuTien = "Thấp", ThoiGianDuKien = 20 },
-                new CongViec { MaCongViec = "CV06", TenCongViec = "Triển khai lên server", TrangThai = "Chưa bắt đầu", NguoiPhuTrach = "Ngô Thị F", NgayBatDau = new DateTime(2025, 12, 10), NgayKetThuc = new DateTime(2025, 12, 15), DoUuTien = "Cao", ThoiGianDuKien = 15 }
-            };
+                try
+                {
+                    DataTable dt = DatabaseHelper.ExecuteStoredProcedure("sp_GetFirstUserId");
+                    if (dt != null && dt.Rows.Count > 0)
+                    {
+                        _userId = Convert.ToInt32(dt.Rows[0]["UserId"]);
+                    }
+                }
+                catch
+                {
+                    // Nếu không lấy được, để mặc định là 0
+                }
+            }
+            
+            HienThiDanhSach();
         }
 
         private void HienThiDanhSach()
         {
-            dgvCongViec.DataSource = null;
-            dgvCongViec.DataSource = danhSachCongViec.Select(cv => new
+            try
             {
-                cv.MaCongViec,
-                cv.TenCongViec,
-                cv.TrangThai,
-                cv.NguoiPhuTrach,
-                NgayBatDau = cv.NgayBatDau.ToString("dd/MM/yyyy"),
-                NgayKetThuc = cv.NgayKetThuc.ToString("dd/MM/yyyy"),
-                cv.DoUuTien,
-                cv.ThoiGianDuKien
-            }).ToList();
+                SqlParameter[] parameters = { new SqlParameter("@UserId", _userId) };
+                DataTable dt = DatabaseHelper.ExecuteStoredProcedure("sp_GetTasksByFilter", parameters);
+                
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    // Tạo DataTable mới với các cột cần hiển thị
+                    DataTable dtDisplay = new DataTable();
+                    dtDisplay.Columns.Add("Id", typeof(int));
+                    dtDisplay.Columns.Add("MaCongViec", typeof(string));
+                    dtDisplay.Columns.Add("TenCongViec", typeof(string));
+                    dtDisplay.Columns.Add("TrangThai", typeof(string));
+                    dtDisplay.Columns.Add("NguoiPhuTrach", typeof(string));
+                    dtDisplay.Columns.Add("NgayBatDau", typeof(DateTime));
+                    dtDisplay.Columns.Add("NgayKetThuc", typeof(DateTime));
+                    dtDisplay.Columns.Add("DoUuTien", typeof(string));
+                    dtDisplay.Columns.Add("Category", typeof(string));
+
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        DataRow newRow = dtDisplay.NewRow();
+                        newRow["Id"] = row["Id"];
+                        newRow["MaCongViec"] = "CV" + row["Id"].ToString();
+                        newRow["TenCongViec"] = row["Title"];
+                        newRow["TrangThai"] = ConvertStatus(row["Status"].ToString());
+                        newRow["NguoiPhuTrach"] = row["UserFullName"];
+                        newRow["NgayBatDau"] = row["CreatedDate"];
+                        newRow["NgayKetThuc"] = row["DueDate"];
+                        newRow["DoUuTien"] = ConvertPriority(row["Priority"].ToString());
+                        newRow["Category"] = row["Category"];
+                        dtDisplay.Rows.Add(newRow);
+                    }
+
+                    dgvCongViec.DataSource = dtDisplay;
+                    
+                    // Ẩn cột Id
+                    if (dgvCongViec.Columns["Id"] != null)
+                        dgvCongViec.Columns["Id"].Visible = false;
+                    
+                    // Định dạng cột ngày tháng
+                    if (dgvCongViec.Columns["NgayBatDau"] != null)
+                        dgvCongViec.Columns["NgayBatDau"].DefaultCellStyle.Format = "dd/MM/yyyy";
+                    if (dgvCongViec.Columns["NgayKetThuc"] != null)
+                        dgvCongViec.Columns["NgayKetThuc"].DefaultCellStyle.Format = "dd/MM/yyyy";
+                    
+                    // Đặt header text
+                    if (dgvCongViec.Columns["MaCongViec"] != null)
+                        dgvCongViec.Columns["MaCongViec"].HeaderText = "Mã CV";
+                    if (dgvCongViec.Columns["TenCongViec"] != null)
+                        dgvCongViec.Columns["TenCongViec"].HeaderText = "Tên CV";
+                    if (dgvCongViec.Columns["TrangThai"] != null)
+                        dgvCongViec.Columns["TrangThai"].HeaderText = "Trạng Thái";
+                    if (dgvCongViec.Columns["NguoiPhuTrach"] != null)
+                        dgvCongViec.Columns["NguoiPhuTrach"].HeaderText = "Người Phụ Trách";
+                    if (dgvCongViec.Columns["NgayBatDau"] != null)
+                        dgvCongViec.Columns["NgayBatDau"].HeaderText = "Ngày Bắt Đầu";
+                    if (dgvCongViec.Columns["NgayKetThuc"] != null)
+                        dgvCongViec.Columns["NgayKetThuc"].HeaderText = "Ngày Kết Thúc";
+                    if (dgvCongViec.Columns["DoUuTien"] != null)
+                        dgvCongViec.Columns["DoUuTien"].HeaderText = "Độ Ưu Tiên";
+                }
+                else
+                {
+                    dgvCongViec.DataSource = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi tải danh sách công việc: " + ex.Message, "Lỗi", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private string ConvertStatus(string status)
+        {
+            switch (status)
+            {
+                case "Todo": return "Chưa bắt đầu";
+                case "Doing": return "Đang thực hiện";
+                case "Done": return "Hoàn thành";
+                default: return status;
+            }
+        }
+
+        private string ConvertPriority(string priority)
+        {
+            switch (priority)
+            {
+                case "High": return "Cao";
+                case "Medium": return "Trung bình";
+                case "Low": return "Thấp";
+                default: return priority;
+            }
+        }
+
+        private string ConvertStatusToEnglish(string status)
+        {
+            switch (status)
+            {
+                case "Chưa bắt đầu": return "Todo";
+                case "Đang thực hiện": return "Doing";
+                case "Hoàn thành": return "Done";
+                default: return status;
+            }
+        }
+
+        private string ConvertPriorityToEnglish(string priority)
+        {
+            switch (priority)
+            {
+                case "Cao": return "High";
+                case "Trung bình": return "Medium";
+                case "Thấp": return "Low";
+                default: return priority;
+            }
         }
 
         private void btnThem_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtMaCongViec.Text) || string.IsNullOrWhiteSpace(txtTenCongViec.Text))
+            if (string.IsNullOrWhiteSpace(txtTenCongViec.Text))
             {
-                MessageBox.Show("Vui lòng nhập Mã Công Việc và Tên Công Việc!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Vui lòng nhập Tên Công Việc!", "Thông báo", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            var congViecMoi = new CongViec
+            try
             {
-                MaCongViec = txtMaCongViec.Text.Trim(),
-                TenCongViec = txtTenCongViec.Text.Trim(),
-                TrangThai = txtTrangThai.Text.Trim(),
-                NguoiPhuTrach = txtNguoiPhuTrach.Text.Trim(),
-                NgayBatDau = dtpNgayBatDau.Value,
-                NgayKetThuc = dtpNgayKetThuc.Value,
-                DoUuTien = txtDoUuTien.Text.Trim(),
-                ThoiGianDuKien = int.TryParse(txtThoiGianDuKien.Text, out int tg) ? tg : 0
-            };
+                string status = string.IsNullOrWhiteSpace(txtTrangThai.Text) ? "Todo" : ConvertStatusToEnglish(txtTrangThai.Text);
+                string priority = string.IsNullOrWhiteSpace(txtDoUuTien.Text) ? "Medium" : ConvertPriorityToEnglish(txtDoUuTien.Text);
+                string category = "Work"; // Mặc định
+                string description = "";
 
-            if (danhSachCongViec.Any(cv => cv.MaCongViec == congViecMoi.MaCongViec))
-            {
-                MessageBox.Show("Mã Công Việc đã tồn tại!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
+                SqlParameter taskIdParam = new SqlParameter("@TaskId", SqlDbType.Int) 
+                { 
+                    Direction = ParameterDirection.Output 
+                };
+
+                SqlParameter[] parameters = 
+                {
+                    new SqlParameter("@Title", txtTenCongViec.Text.Trim()),
+                    new SqlParameter("@Description", (object)description ?? DBNull.Value),
+                    new SqlParameter("@UserId", _userId),
+                    new SqlParameter("@Priority", priority),
+                    new SqlParameter("@Status", status),
+                    new SqlParameter("@Category", category),
+                    new SqlParameter("@DueDate", dtpNgayKetThuc.Value),
+                    taskIdParam
+                };
+
+                DatabaseHelper.ExecuteStoredProcedureNonQuery("sp_CreateTask", parameters);
+                
+                int taskId = taskIdParam.Value != DBNull.Value ? Convert.ToInt32(taskIdParam.Value) : 0;
+                if (taskId > 0)
+                {
+                    HienThiDanhSach();
+                    LamRongForm();
+                    MessageBox.Show("Thêm công việc thành công!", "Thông báo", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
             }
-
-            danhSachCongViec.Add(congViecMoi);
-            HienThiDanhSach();
-            LamRongForm();
-            MessageBox.Show("Thêm công việc thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi thêm công việc: " + ex.Message, "Lỗi", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void btnSua_Click(object sender, EventArgs e)
         {
-            if (dgvCongViec.SelectedRows.Count == 0)
+            if (_selectedTaskId == 0)
             {
-                MessageBox.Show("Vui lòng chọn một công việc để sửa!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Vui lòng chọn một công việc để sửa!", "Thông báo", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            string maCongViec = dgvCongViec.SelectedRows[0].Cells["MaCongViec"].Value?.ToString();
-            var congViecCanSua = danhSachCongViec.FirstOrDefault(cv => cv.MaCongViec == maCongViec);
-
-            if (congViecCanSua == null)
+            if (string.IsNullOrWhiteSpace(txtTenCongViec.Text))
             {
-                MessageBox.Show("Không tìm thấy công việc để sửa!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Vui lòng nhập Tên Công Việc!", "Thông báo", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            congViecCanSua.TenCongViec = txtTenCongViec.Text.Trim();
-            congViecCanSua.TrangThai = txtTrangThai.Text.Trim();
-            congViecCanSua.NguoiPhuTrach = txtNguoiPhuTrach.Text.Trim();
-            congViecCanSua.NgayBatDau = dtpNgayBatDau.Value;
-            congViecCanSua.NgayKetThuc = dtpNgayKetThuc.Value;
-            congViecCanSua.DoUuTien = txtDoUuTien.Text.Trim();
-            congViecCanSua.ThoiGianDuKien = int.TryParse(txtThoiGianDuKien.Text, out int tg) ? tg : congViecCanSua.ThoiGianDuKien;
+            try
+            {
+                string status = string.IsNullOrWhiteSpace(txtTrangThai.Text) ? "Todo" : ConvertStatusToEnglish(txtTrangThai.Text);
+                string priority = string.IsNullOrWhiteSpace(txtDoUuTien.Text) ? "Medium" : ConvertPriorityToEnglish(txtDoUuTien.Text);
+                string category = "Work"; // Mặc định
+                string description = "";
 
-            HienThiDanhSach();
-            MessageBox.Show("Cập nhật công việc thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                SqlParameter[] parameters = 
+                {
+                    new SqlParameter("@TaskId", _selectedTaskId),
+                    new SqlParameter("@Title", txtTenCongViec.Text.Trim()),
+                    new SqlParameter("@Description", (object)description ?? DBNull.Value),
+                    new SqlParameter("@UserId", _userId),
+                    new SqlParameter("@Priority", priority),
+                    new SqlParameter("@Status", status),
+                    new SqlParameter("@Category", category),
+                    new SqlParameter("@DueDate", dtpNgayKetThuc.Value)
+                };
+
+                DatabaseHelper.ExecuteStoredProcedureNonQuery("sp_UpdateTask", parameters);
+                
+                HienThiDanhSach();
+                MessageBox.Show("Cập nhật công việc thành công!", "Thông báo", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi cập nhật công việc: " + ex.Message, "Lỗi", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void btnXoa_Click(object sender, EventArgs e)
         {
-            if (dgvCongViec.SelectedRows.Count == 0)
+            if (_selectedTaskId == 0)
             {
-                MessageBox.Show("Vui lòng chọn một công việc để xóa!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Vui lòng chọn một công việc để xóa!", "Thông báo", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            string maCongViec = dgvCongViec.SelectedRows[0].Cells["MaCongViec"].Value?.ToString();
-            var congViecCanXoa = danhSachCongViec.FirstOrDefault(cv => cv.MaCongViec == maCongViec);
-
-            if (congViecCanXoa == null)
+            if (MessageBox.Show("Bạn có chắc muốn xóa công việc này?", "Xác nhận xóa", 
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
-                MessageBox.Show("Không tìm thấy công việc để xóa!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
+                try
+                {
+                    SqlParameter[] parameters = 
+                    {
+                        new SqlParameter("@TaskId", _selectedTaskId),
+                        new SqlParameter("@UserId", _userId)
+                    };
 
-            if (MessageBox.Show($"Bạn có chắc muốn xóa công việc '{congViecCanXoa.TenCongViec}'?", "Xác nhận xóa", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-            {
-                danhSachCongViec.Remove(congViecCanXoa);
-                HienThiDanhSach();
-                LamRongForm();
-                MessageBox.Show("Xóa công việc thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    DatabaseHelper.ExecuteStoredProcedureNonQuery("sp_DeleteTask", parameters);
+                    
+                    HienThiDanhSach();
+                    LamRongForm();
+                    MessageBox.Show("Xóa công việc thành công!", "Thông báo", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Lỗi khi xóa công việc: " + ex.Message, "Lỗi", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
 
         private void btnTimKiem_Click(object sender, EventArgs e)
         {
-            string tuKhoa = txtTimKiem.Text.Trim().ToLower();
+            string tuKhoa = txtTimKiem.Text.Trim();
             if (string.IsNullOrEmpty(tuKhoa))
             {
                 HienThiDanhSach();
                 return;
             }
 
-            var ketQuaTim = danhSachCongViec.Where(cv => cv.MaCongViec.ToLower().Contains(tuKhoa)).ToList();
-
-            dgvCongViec.DataSource = ketQuaTim.Select(cv => new
+            try
             {
-                cv.MaCongViec,
-                cv.TenCongViec,
-                cv.TrangThai,
-                cv.NguoiPhuTrach,
-                NgayBatDau = cv.NgayBatDau.ToString("dd/MM/yyyy"),
-                NgayKetThuc = cv.NgayKetThuc.ToString("dd/MM/yyyy"),
-                cv.DoUuTien,
-                cv.ThoiGianDuKien
-            }).ToList();
+                SqlParameter[] parameters = 
+                {
+                    new SqlParameter("@UserId", _userId),
+                    new SqlParameter("@SearchTerm", tuKhoa)
+                };
+
+                DataTable dt = DatabaseHelper.ExecuteStoredProcedure("sp_SearchTasks", parameters);
+                
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    // Tạo DataTable mới với các cột cần hiển thị
+                    DataTable dtDisplay = new DataTable();
+                    dtDisplay.Columns.Add("Id", typeof(int));
+                    dtDisplay.Columns.Add("MaCongViec", typeof(string));
+                    dtDisplay.Columns.Add("TenCongViec", typeof(string));
+                    dtDisplay.Columns.Add("TrangThai", typeof(string));
+                    dtDisplay.Columns.Add("NguoiPhuTrach", typeof(string));
+                    dtDisplay.Columns.Add("NgayBatDau", typeof(DateTime));
+                    dtDisplay.Columns.Add("NgayKetThuc", typeof(DateTime));
+                    dtDisplay.Columns.Add("DoUuTien", typeof(string));
+
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        DataRow newRow = dtDisplay.NewRow();
+                        newRow["Id"] = row["Id"];
+                        newRow["MaCongViec"] = "CV" + row["Id"].ToString();
+                        newRow["TenCongViec"] = row["Title"];
+                        newRow["TrangThai"] = ConvertStatus(row["Status"].ToString());
+                        newRow["NguoiPhuTrach"] = row["UserFullName"];
+                        newRow["NgayBatDau"] = row["CreatedDate"];
+                        newRow["NgayKetThuc"] = row["DueDate"];
+                        newRow["DoUuTien"] = ConvertPriority(row["Priority"].ToString());
+                        dtDisplay.Rows.Add(newRow);
+                    }
+
+                    dgvCongViec.DataSource = dtDisplay;
+                    
+                    // Ẩn cột Id
+                    if (dgvCongViec.Columns["Id"] != null)
+                        dgvCongViec.Columns["Id"].Visible = false;
+                    
+                    // Định dạng cột ngày tháng
+                    if (dgvCongViec.Columns["NgayBatDau"] != null)
+                        dgvCongViec.Columns["NgayBatDau"].DefaultCellStyle.Format = "dd/MM/yyyy";
+                    if (dgvCongViec.Columns["NgayKetThuc"] != null)
+                        dgvCongViec.Columns["NgayKetThuc"].DefaultCellStyle.Format = "dd/MM/yyyy";
+                }
+                else
+                {
+                    dgvCongViec.DataSource = null;
+                    MessageBox.Show("Không tìm thấy kết quả nào.", "Thông báo", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi tìm kiếm: " + ex.Message, "Lỗi", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void btnHienThi_Click(object sender, EventArgs e)
@@ -167,19 +376,58 @@ namespace QuanLyCongViec
             if (dgvCongViec.SelectedRows.Count > 0)
             {
                 var row = dgvCongViec.SelectedRows[0];
-                txtMaCongViec.Text = row.Cells["MaCongViec"].Value?.ToString();
-                txtTenCongViec.Text = row.Cells["TenCongViec"].Value?.ToString();
-                txtTrangThai.Text = row.Cells["TrangThai"].Value?.ToString();
-                txtNguoiPhuTrach.Text = row.Cells["NguoiPhuTrach"].Value?.ToString();
-                dtpNgayBatDau.Value = DateTime.TryParse(row.Cells["NgayBatDau"].Value?.ToString(), out DateTime dt1) ? dt1 : DateTime.Now;
-                dtpNgayKetThuc.Value = DateTime.TryParse(row.Cells["NgayKetThuc"].Value?.ToString(), out DateTime dt2) ? dt2 : DateTime.Now;
-                txtDoUuTien.Text = row.Cells["DoUuTien"].Value?.ToString();
-                txtThoiGianDuKien.Text = row.Cells["ThoiGianDuKien"].Value?.ToString();
+                
+                // Lấy Id từ cột ẩn hoặc từ MaCongViec
+                if (row.Cells["Id"] != null && row.Cells["Id"].Value != null)
+                {
+                    _selectedTaskId = Convert.ToInt32(row.Cells["Id"].Value);
+                }
+                else if (row.Cells["MaCongViec"] != null)
+                {
+                    string maCV = row.Cells["MaCongViec"].Value?.ToString() ?? "";
+                    if (maCV.StartsWith("CV"))
+                    {
+                        int.TryParse(maCV.Substring(2), out _selectedTaskId);
+                    }
+                }
+                
+                txtMaCongViec.Text = row.Cells["MaCongViec"]?.Value?.ToString() ?? "";
+                txtTenCongViec.Text = row.Cells["TenCongViec"]?.Value?.ToString() ?? "";
+                txtTrangThai.Text = row.Cells["TrangThai"]?.Value?.ToString() ?? "";
+                txtNguoiPhuTrach.Text = row.Cells["NguoiPhuTrach"]?.Value?.ToString() ?? "";
+                
+                // Xử lý ngày tháng
+                if (row.Cells["NgayBatDau"]?.Value != null)
+                {
+                    if (row.Cells["NgayBatDau"].Value is DateTime dt1)
+                    {
+                        dtpNgayBatDau.Value = dt1;
+                    }
+                    else if (DateTime.TryParse(row.Cells["NgayBatDau"].Value.ToString(), out DateTime parsedDate1))
+                    {
+                        dtpNgayBatDau.Value = parsedDate1;
+                    }
+                }
+                
+                if (row.Cells["NgayKetThuc"]?.Value != null)
+                {
+                    if (row.Cells["NgayKetThuc"].Value is DateTime dt2)
+                    {
+                        dtpNgayKetThuc.Value = dt2;
+                    }
+                    else if (DateTime.TryParse(row.Cells["NgayKetThuc"].Value.ToString(), out DateTime parsedDate2))
+                    {
+                        dtpNgayKetThuc.Value = parsedDate2;
+                    }
+                }
+                
+                txtDoUuTien.Text = row.Cells["DoUuTien"]?.Value?.ToString() ?? "";
             }
         }
 
         private void LamRongForm()
         {
+            _selectedTaskId = 0;
             txtMaCongViec.Clear();
             txtTenCongViec.Clear();
             txtTrangThai.Clear();
@@ -188,19 +436,7 @@ namespace QuanLyCongViec
             dtpNgayKetThuc.Value = DateTime.Now;
             txtDoUuTien.Clear();
             txtThoiGianDuKien.Clear();
-            txtMaCongViec.Focus();
-        }
-
-        public class CongViec
-        {
-            public string MaCongViec { get; set; }
-            public string TenCongViec { get; set; }
-            public string TrangThai { get; set; }
-            public string NguoiPhuTrach { get; set; }
-            public DateTime NgayBatDau { get; set; }
-            public DateTime NgayKetThuc { get; set; }
-            public string DoUuTien { get; set; }
-            public int ThoiGianDuKien { get; set; }
+            txtTenCongViec.Focus();
         }
     }
 }

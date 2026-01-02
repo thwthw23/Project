@@ -1,105 +1,192 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Data;
+using System.Data.SqlClient;
 using System.Windows.Forms;
+using QuanLyCongViec.DataAccess;
+using QuanLyCongViec.Helpers;
 
 namespace QuanLyCongViec
 {
     public partial class frmBaoCao : Form
     {
-        private List<CongViec> danhSachCongViec;
+        private int _userId;
 
-        public frmBaoCao()
+        public frmBaoCao(int userId = 0)
         {
             InitializeComponent();
-            KhoiTaoDuLieuMau();
+            _userId = userId;
+            Helpers.FontHelper.SetUnicodeFont(this);
+            Helpers.FontHelper.SetUnicodeFontForDataGridView(dgvBaoCao);
             CapNhatThongKe();
-        }
-
-        private void KhoiTaoDuLieuMau()
-        {
-            danhSachCongViec = new List<CongViec>
-            {
-                new CongViec { MaCongViec = "CV01", TenCongViec = "Phân tích yêu cầu hệ thống", TrangThai = "Chưa bắt đầu", NguoiPhuTrach = "Nguyễn Văn A", NgayBatDau = new DateTime(2025, 11, 01), NgayKetThuc = new DateTime(2025, 11, 10), DoUuTien = "Cao", ThoiGianDuKien = 40 },
-                new CongViec { MaCongViec = "CV02", TenCongViec = "Thiết kế giao diện người dùng", TrangThai = "Đang thực hiện", NguoiPhuTrach = "Trần Thị B", NgayBatDau = new DateTime(2025, 11, 05), NgayKetThuc = new DateTime(2025, 11, 15), DoUuTien = "Trung bình", ThoiGianDuKien = 30 },
-                new CongViec { MaCongViec = "CV03", TenCongViec = "Lập trình module đăng nhập", TrangThai = "Hoàn thành", NguoiPhuTrach = "Lê Văn C", NgayBatDau = new DateTime(2025, 11, 10), NgayKetThuc = new DateTime(2025, 11, 20), DoUuTien = "Cao", ThoiGianDuKien = 25 },
-                new CongViec { MaCongViec = "CV04", TenCongViec = "Kiểm thử tích hợp", TrangThai = "Chưa bắt đầu", NguoiPhuTrach = "Phạm Thị D", NgayBatDau = new DateTime(2025, 11, 25), NgayKetThuc = new DateTime(2025, 12, 05), DoUuTien = "Cao", ThoiGianDuKien = 35 },
-                new CongViec { MaCongViec = "CV05", TenCongViec = "Viết tài liệu hướng dẫn sử dụng", TrangThai = "Đang thực hiện", NguoiPhuTrach = "Hoàng Văn E", NgayBatDau = new DateTime(2025, 11, 15), NgayKetThuc = new DateTime(2025, 12, 01), DoUuTien = "Thấp", ThoiGianDuKien = 20 },
-                new CongViec { MaCongViec = "CV06", TenCongViec = "Triển khai lên server", TrangThai = "Chưa bắt đầu", NguoiPhuTrach = "Ngô Thị F", NgayBatDau = new DateTime(2025, 12, 10), NgayKetThuc = new DateTime(2025, 12, 15), DoUuTien = "Cao", ThoiGianDuKien = 15 }
-            };
         }
 
         private void CapNhatThongKe()
         {
-            int slDauSach = danhSachCongViec.Count;
-            int slMuon = danhSachCongViec.Count(cv => cv.TrangThai != "Hoàn thành");
-            int slQuaHan = danhSachCongViec.Count(cv => cv.NgayKetThuc < DateTime.Now && cv.TrangThai != "Hoàn thành");
-            int slCon = slDauSach - slQuaHan;
-            decimal tongGiaTri = slDauSach * 100000;
+            try
+            {
+                // Lấy thống kê từ database
+                SqlParameter[] parameters = { new SqlParameter("@UserId", _userId) };
+                DataSet ds = new DataSet();
+                
+                using (SqlConnection connection = DatabaseHelper.GetConnection())
+                {
+                    connection.Open();
+                    using (SqlCommand command = new SqlCommand("sp_GetReportData", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.Parameters.AddRange(parameters);
+                        
+                        using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+                        {
+                            adapter.Fill(ds);
+                        }
+                    }
+                }
 
-            txtSLDauSach.Text = slDauSach.ToString();
-            txtSLMuon.Text = slMuon.ToString();
-            txtSLQuaHan.Text = slQuaHan.ToString();
-            txtSLCon.Text = slCon.ToString();
-            txtTongGiaTri.Text = tongGiaTri.ToString("N0");
-            var nguoiPhuTrachList = danhSachCongViec.Select(cv => cv.NguoiPhuTrach).Distinct().ToList();
-            int slDocGia = nguoiPhuTrachList.Count;
-            int slDGDaMuon = danhSachCongViec.Count();
-            int slDGQuaHan = danhSachCongViec
-                .Where(cv => cv.NgayKetThuc < DateTime.Now && cv.TrangThai != "Hoàn thành")
-                .Select(cv => cv.NguoiPhuTrach)
-                .Distinct()
-                .Count();
+                // Hiển thị thống kê tổng quan
+                if (ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+                {
+                    DataRow row = ds.Tables[0].Rows[0];
+                    int totalTasks = Convert.ToInt32(row["TotalTasks"]);
+                    int completedTasks = Convert.ToInt32(row["CompletedTasks"]);
+                    int overdueTasks = Convert.ToInt32(row["OverdueTasks"]);
+                    int inProgress = totalTasks - completedTasks;
 
-            txtSLDocGia.Text = slDocGia.ToString();
-            txtSLDGDaMuon.Text = slDGDaMuon.ToString();
-            txtSLDGQuaHan.Text = slDGQuaHan.ToString();
+                    txtSLDauSach.Text = totalTasks.ToString();
+                    txtSLMuon.Text = inProgress.ToString();
+                    txtSLQuaHan.Text = overdueTasks.ToString();
+                    txtSLCon.Text = (totalTasks - overdueTasks).ToString();
+                    txtTongGiaTri.Text = totalTasks.ToString("N0");
+                }
+
+                // Thống kê người phụ trách
+                DataTable dtUsers = DatabaseHelper.ExecuteStoredProcedure("sp_GetUsersWithOverdueTasks");
+                if (dtUsers != null && dtUsers.Rows.Count > 0)
+                {
+                    int totalUsers = dtUsers.Rows.Count;
+                    int totalOverdue = 0;
+                    foreach (DataRow dr in dtUsers.Rows)
+                    {
+                        totalOverdue += Convert.ToInt32(dr["SoLuongQuaHan"]);
+                    }
+
+                    txtSLDocGia.Text = totalUsers.ToString();
+                    txtSLDGDaMuon.Text = totalOverdue.ToString();
+                    txtSLDGQuaHan.Text = totalUsers.ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi tải thống kê: " + ex.Message, "Lỗi", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void btnDSSachQuaHan_Click(object sender, EventArgs e)
         {
-            var dsQuaHan = danhSachCongViec
-                .Where(cv => cv.NgayKetThuc < DateTime.Now && cv.TrangThai != "Hoàn thành")
-                .Select(cv => new
+            try
+            {
+                DataTable dt = DatabaseHelper.ExecuteStoredProcedure("sp_GetOverdueTasks");
+                
+                if (dt != null && dt.Rows.Count > 0)
                 {
-                    MaCV = cv.MaCongViec,
-                    TenCV = cv.TenCongViec,
-                    NguoiPhuTrach = cv.NguoiPhuTrach,
-                    NgayBatDau = cv.NgayBatDau.ToString("dd/MM/yyyy"),
-                    NgayKetThuc = cv.NgayKetThuc.ToString("dd/MM/yyyy"),
-                    TrangThai = cv.TrangThai,
-                    DoUuTien = cv.DoUuTien,
-                    ThoiGianDuKien = cv.ThoiGianDuKien + " giờ"
-                }).ToList();
-
-            dgvBaoCao.DataSource = dsQuaHan;
-            dgvBaoCao.Columns["MaCV"].HeaderText = "Mã CV";
-            dgvBaoCao.Columns["TenCV"].HeaderText = "Tên CV";
-            dgvBaoCao.Columns["NguoiPhuTrach"].HeaderText = "Người Phụ Trách";
-            dgvBaoCao.Columns["NgayBatDau"].HeaderText = "Ngày Bắt Đầu";
-            dgvBaoCao.Columns["NgayKetThuc"].HeaderText = "Ngày Kết Thúc";
-            dgvBaoCao.Columns["TrangThai"].HeaderText = "Trạng Thái";
-            dgvBaoCao.Columns["DoUuTien"].HeaderText = "Độ Ưu Tiên";
-            dgvBaoCao.Columns["ThoiGianDuKien"].HeaderText = "Thời Gian Dự Kiến";
+                    // Định dạng cột ngày tháng
+                    dgvBaoCao.DataSource = dt;
+                    if (dgvBaoCao.Columns["NgayBatDau"] != null)
+                        dgvBaoCao.Columns["NgayBatDau"].DefaultCellStyle.Format = "dd/MM/yyyy";
+                    if (dgvBaoCao.Columns["NgayKetThuc"] != null)
+                        dgvBaoCao.Columns["NgayKetThuc"].DefaultCellStyle.Format = "dd/MM/yyyy";
+                    
+                    // Đặt header text
+                    if (dgvBaoCao.Columns["MaCV"] != null)
+                        dgvBaoCao.Columns["MaCV"].HeaderText = "Mã CV";
+                    if (dgvBaoCao.Columns["TenCV"] != null)
+                        dgvBaoCao.Columns["TenCV"].HeaderText = "Tên CV";
+                    if (dgvBaoCao.Columns["NguoiPhuTrach"] != null)
+                        dgvBaoCao.Columns["NguoiPhuTrach"].HeaderText = "Người Phụ Trách";
+                    if (dgvBaoCao.Columns["NgayBatDau"] != null)
+                        dgvBaoCao.Columns["NgayBatDau"].HeaderText = "Ngày Bắt Đầu";
+                    if (dgvBaoCao.Columns["NgayKetThuc"] != null)
+                        dgvBaoCao.Columns["NgayKetThuc"].HeaderText = "Ngày Kết Thúc";
+                    if (dgvBaoCao.Columns["TrangThai"] != null)
+                        dgvBaoCao.Columns["TrangThai"].HeaderText = "Trạng Thái";
+                    if (dgvBaoCao.Columns["DoUuTien"] != null)
+                        dgvBaoCao.Columns["DoUuTien"].HeaderText = "Độ Ưu Tiên";
+                }
+                else
+                {
+                    dgvBaoCao.DataSource = null;
+                    MessageBox.Show("Không có công việc nào quá hạn.", "Thông báo", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi tải danh sách công việc quá hạn: " + ex.Message, "Lỗi", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void btnDSDGQuaHan_Click(object sender, EventArgs e)
         {
-            var dsNguoiQuaHan = danhSachCongViec
-                .Where(cv => cv.NgayKetThuc < DateTime.Now && cv.TrangThai != "Hoàn thành")
-                .GroupBy(cv => cv.NguoiPhuTrach)
-                .Select(g => new
+            try
+            {
+                DataTable dt = DatabaseHelper.ExecuteStoredProcedure("sp_GetUsersWithOverdueTasks");
+                
+                if (dt != null && dt.Rows.Count > 0)
                 {
-                    NguoiPhuTrach = g.Key,
-                    SoLuongQuaHan = g.Count(),
-                    DanhSachCV = string.Join(", ", g.Select(cv => cv.MaCongViec))
-                })
-                .ToList();
+                    // Tạo DataTable mới với cột DanhSachCV
+                    DataTable dtResult = new DataTable();
+                    dtResult.Columns.Add("NguoiPhuTrach", typeof(string));
+                    dtResult.Columns.Add("SoLuongQuaHan", typeof(int));
+                    dtResult.Columns.Add("DanhSachCV", typeof(string));
 
-            dgvBaoCao.DataSource = dsNguoiQuaHan;
-            dgvBaoCao.Columns["NguoiPhuTrach"].HeaderText = "Người Phụ Trách";
-            dgvBaoCao.Columns["SoLuongQuaHan"].HeaderText = "Số CV Quá Hạn";
-            dgvBaoCao.Columns["DanhSachCV"].HeaderText = "Danh Sách Mã CV";
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        string nguoiPhuTrach = row["NguoiPhuTrach"].ToString();
+                        int soLuong = Convert.ToInt32(row["SoLuongQuaHan"]);
+                        
+                        // Lấy danh sách mã CV quá hạn của người này
+                        DataTable dtTasks = DatabaseHelper.ExecuteStoredProcedure("sp_GetOverdueTasks");
+                        string danhSachCV = "";
+                        if (dtTasks != null)
+                        {
+                            var tasks = dtTasks.Select($"NguoiPhuTrach = '{nguoiPhuTrach}'");
+                            var maCVList = new System.Collections.Generic.List<string>();
+                            foreach (DataRow taskRow in tasks)
+                            {
+                                maCVList.Add(taskRow["MaCV"].ToString());
+                            }
+                            danhSachCV = string.Join(", ", maCVList);
+                        }
+
+                        DataRow newRow = dtResult.NewRow();
+                        newRow["NguoiPhuTrach"] = nguoiPhuTrach;
+                        newRow["SoLuongQuaHan"] = soLuong;
+                        newRow["DanhSachCV"] = danhSachCV;
+                        dtResult.Rows.Add(newRow);
+                    }
+
+                    dgvBaoCao.DataSource = dtResult;
+                    if (dgvBaoCao.Columns["NguoiPhuTrach"] != null)
+                        dgvBaoCao.Columns["NguoiPhuTrach"].HeaderText = "Người Phụ Trách";
+                    if (dgvBaoCao.Columns["SoLuongQuaHan"] != null)
+                        dgvBaoCao.Columns["SoLuongQuaHan"].HeaderText = "Số CV Quá Hạn";
+                    if (dgvBaoCao.Columns["DanhSachCV"] != null)
+                        dgvBaoCao.Columns["DanhSachCV"].HeaderText = "Danh Sách Mã CV";
+                }
+                else
+                {
+                    dgvBaoCao.DataSource = null;
+                    MessageBox.Show("Không có người nào có công việc quá hạn.", "Thông báo", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi tải danh sách người quá hạn: " + ex.Message, "Lỗi", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void btnHome_Click(object sender, EventArgs e)
@@ -113,19 +200,6 @@ namespace QuanLyCongViec
 
         private void label1_Click(object sender, EventArgs e)
         {
-
         }
-    }
-
-    public class CongViec
-    {
-        public string MaCongViec { get; set; }
-        public string TenCongViec { get; set; }
-        public string TrangThai { get; set; }
-        public string NguoiPhuTrach { get; set; }
-        public DateTime NgayBatDau { get; set; }
-        public DateTime NgayKetThuc { get; set; }
-        public string DoUuTien { get; set; }
-        public int ThoiGianDuKien { get; set; }
     }
 }

@@ -1,71 +1,94 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Data;
+using System.Data.SqlClient;
 using System.Windows.Forms;
+using QuanLyCongViec.DataAccess;
+using QuanLyCongViec.Helpers;
 
 namespace QuanLyCongViec
 {
     public partial class frmLichSu : Form
     {
-        private List<LichSu> danhSachLichSu;
-
         public frmLichSu()
         {
             InitializeComponent();
-            KhoiTaoDuLieuMau();
+            Helpers.FontHelper.SetUnicodeFont(this);
+            Helpers.FontHelper.SetUnicodeFontForDataGridView(dgvLichSu);
             HienThiDanhSach();
-        }
-
-        private void KhoiTaoDuLieuMau()
-        {
-            danhSachLichSu = new List<LichSu>
-            {
-                new LichSu { MaLichSu = "LS001", NguoiThaoTac = "Nguyễn Văn A", MaCongViec = "CV01", NgayTao = new DateTime(2025, 12, 01), HanhDong = "Thêm", DoUuTien = "Cao", ChiTiet = "Thêm công việc: Phân tích yêu cầu hệ thống" },
-                new LichSu { MaLichSu = "LS002", NguoiThaoTac = "Trần Thị B", MaCongViec = "CV02", NgayTao = new DateTime(2025, 12, 02), HanhDong = "Sửa", DoUuTien = "Trung bình", ChiTiet = "Sửa trạng thái từ 'Chưa bắt đầu' sang 'Đang thực hiện'" },
-                new LichSu { MaLichSu = "LS003", NguoiThaoTac = "Lê Văn C", MaCongViec = "CV03", NgayTao = new DateTime(2025, 12, 03), HanhDong = "Xóa", DoUuTien = "Cao", ChiTiet = "Xóa công việc: Lập trình module đăng nhập" },
-                new LichSu { MaLichSu = "LS004", NguoiThaoTac = "Phạm Thị D", MaCongViec = "CV04", NgayTao = new DateTime(2025, 12, 04), HanhDong = "Sửa", DoUuTien = "Cao", ChiTiet = "Cập nhật thời gian dự kiến từ 35 lên 40 giờ" },
-                new LichSu { MaLichSu = "LS005", NguoiThaoTac = "Hoàng Văn E", MaCongViec = "CV05", NgayTao = new DateTime(2025, 12, 05), HanhDong = "Thêm", DoUuTien = "Thấp", ChiTiet = "Thêm công việc: Viết tài liệu hướng dẫn sử dụng" },
-                new LichSu { MaLichSu = "LS006", NguoiThaoTac = "Ngô Thị F", MaCongViec = "CV06", NgayTao = new DateTime(2025, 12, 06), HanhDong = "Sửa", DoUuTien = "Cao", ChiTiet = "Cập nhật người phụ trách sang Ngô Thị F" }
-            };
         }
 
         private void HienThiDanhSach()
         {
-            dgvLichSu.DataSource = null;
-            dgvLichSu.DataSource = danhSachLichSu.Select(ls => new
+            try
             {
-                ls.MaLichSu,
-                ls.NguoiThaoTac,
-                ls.MaCongViec,
-                NgayTao = ls.NgayTao.ToString("dd/MM/yyyy"),
-                ls.HanhDong,
-                ls.DoUuTien,
-                ls.ChiTiet
-            }).ToList();
+                DataTable dt = DatabaseHelper.ExecuteStoredProcedure("sp_GetAllTaskHistory");
+                
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    dgvLichSu.DataSource = dt;
+                    
+                    // Định dạng cột ngày tháng
+                    if (dgvLichSu.Columns["NgayTao"] != null)
+                    {
+                        dgvLichSu.Columns["NgayTao"].DefaultCellStyle.Format = "dd/MM/yyyy";
+                    }
+                    
+                    // Đặt header text
+                    if (dgvLichSu.Columns["MaLichSu"] != null)
+                        dgvLichSu.Columns["MaLichSu"].HeaderText = "Mã Lịch Sử";
+                    if (dgvLichSu.Columns["NguoiThaoTac"] != null)
+                        dgvLichSu.Columns["NguoiThaoTac"].HeaderText = "Người Thao Tác";
+                    if (dgvLichSu.Columns["MaCongViec"] != null)
+                        dgvLichSu.Columns["MaCongViec"].HeaderText = "Mã CV";
+                    if (dgvLichSu.Columns["NgayTao"] != null)
+                        dgvLichSu.Columns["NgayTao"].HeaderText = "Ngày Tạo";
+                    if (dgvLichSu.Columns["HanhDong"] != null)
+                        dgvLichSu.Columns["HanhDong"].HeaderText = "Hành Động";
+                    if (dgvLichSu.Columns["DoUuTien"] != null)
+                        dgvLichSu.Columns["DoUuTien"].HeaderText = "Độ Ưu Tiên";
+                    if (dgvLichSu.Columns["ChiTiet"] != null)
+                        dgvLichSu.Columns["ChiTiet"].HeaderText = "Chi Tiết";
+                }
+                else
+                {
+                    dgvLichSu.DataSource = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi tải danh sách lịch sử: " + ex.Message, "Lỗi", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void btnLoadDanhSach_Click(object sender, EventArgs e)
         {
             HienThiDanhSach();
-            MessageBox.Show("Đã tải lại danh sách lịch sử!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("Đã tải lại danh sách lịch sử!", "Thông báo", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void btnTraSach_Click(object sender, EventArgs e)
         {
             if (dgvLichSu.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui lòng chọn một dòng lịch sử để xem chi tiết!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Vui lòng chọn một dòng lịch sử để xem chi tiết!", "Thông báo", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             var row = dgvLichSu.SelectedRows[0];
-            string maLichSu = row.Cells["MaLichSu"].Value?.ToString();
+            string chiTiet = row.Cells["ChiTiet"]?.Value?.ToString() ?? "";
 
-            var lichSu = danhSachLichSu.FirstOrDefault(ls => ls.MaLichSu == maLichSu);
-
-            if (lichSu != null)
+            if (!string.IsNullOrEmpty(chiTiet))
             {
-                MessageBox.Show($"Chi tiết:\n{lichSu.ChiTiet}", "Chi Tiết Lịch Sử", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show($"Chi tiết:\n{chiTiet}", "Chi Tiết Lịch Sử", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                MessageBox.Show("Không có thông tin chi tiết.", "Thông báo", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
@@ -79,54 +102,98 @@ namespace QuanLyCongViec
             if (dgvLichSu.SelectedRows.Count > 0)
             {
                 var row = dgvLichSu.SelectedRows[0];
-                txtMaPhieu.Text = row.Cells["MaLichSu"].Value?.ToString();
-                txtMaDG.Text = row.Cells["NguoiThaoTac"].Value?.ToString();
-                txtMaSach.Text = row.Cells["MaCongViec"].Value?.ToString();
-                dtpNgayMuon.Value = DateTime.TryParse(row.Cells["NgayTao"].Value?.ToString(), out DateTime dt) ? dt : DateTime.Now;
-                txtSoLuong.Text = row.Cells["DoUuTien"].Value?.ToString();
-                txtTinhTrang.Text = row.Cells["HanhDong"].Value?.ToString();
-                txtGhiChu.Text = row.Cells["ChiTiet"].Value?.ToString();
+                txtMaPhieu.Text = row.Cells["MaLichSu"]?.Value?.ToString() ?? "";
+                txtMaDG.Text = row.Cells["NguoiThaoTac"]?.Value?.ToString() ?? "";
+                txtMaSach.Text = row.Cells["MaCongViec"]?.Value?.ToString() ?? "";
+                
+                // Xử lý ngày tạo
+                DateTime? ngayTao = null;
+                if (row.Cells["NgayTao"]?.Value != null)
+                {
+                    if (row.Cells["NgayTao"].Value is DateTime dt)
+                    {
+                        ngayTao = dt;
+                    }
+                    else if (DateTime.TryParse(row.Cells["NgayTao"].Value.ToString(), out DateTime parsedDate))
+                    {
+                        ngayTao = parsedDate;
+                    }
+                }
+                
+                if (ngayTao.HasValue)
+                {
+                    dtpNgayMuon.Value = ngayTao.Value;
+                    dtpNgayTra.Value = ngayTao.Value;
+                }
+                
+                txtSoLuong.Text = row.Cells["DoUuTien"]?.Value?.ToString() ?? "";
+                txtTinhTrang.Text = row.Cells["HanhDong"]?.Value?.ToString() ?? "";
+                txtGhiChu.Text = row.Cells["ChiTiet"]?.Value?.ToString() ?? "";
             }
         }
 
         private void btnTimKiem_Click(object sender, EventArgs e)
         {
-            string tuKhoa = txtTimKiem.Text.Trim().ToLower();
+            string tuKhoa = txtTimKiem.Text.Trim();
             if (string.IsNullOrEmpty(tuKhoa))
             {
                 HienThiDanhSach();
                 return;
             }
 
-            var ketQuaTim = rbMaDG.Checked
-                ? danhSachLichSu.Where(ls => ls.NguoiThaoTac.ToLower().Contains(tuKhoa)).ToList()
-                : danhSachLichSu.Where(ls => ls.MaCongViec.ToLower().Contains(tuKhoa)).ToList();
-
-            dgvLichSu.DataSource = ketQuaTim.Select(ls => new
+            try
             {
-                ls.MaLichSu,
-                ls.NguoiThaoTac,
-                ls.MaCongViec,
-                NgayTao = ls.NgayTao.ToString("dd/MM/yyyy"),
-                ls.HanhDong,
-                ls.DoUuTien,
-                ls.ChiTiet
-            }).ToList();
+                string searchType = rbMaDG.Checked ? "User" : "Task";
+                SqlParameter[] parameters = 
+                {
+                    new SqlParameter("@SearchTerm", tuKhoa),
+                    new SqlParameter("@SearchType", searchType)
+                };
+
+                DataTable dt = DatabaseHelper.ExecuteStoredProcedure("sp_SearchTaskHistory", parameters);
+                
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    dgvLichSu.DataSource = dt;
+                    
+                    // Định dạng cột ngày tháng
+                    if (dgvLichSu.Columns["NgayTao"] != null)
+                    {
+                        dgvLichSu.Columns["NgayTao"].DefaultCellStyle.Format = "dd/MM/yyyy";
+                    }
+                    
+                    // Đặt header text
+                    if (dgvLichSu.Columns["MaLichSu"] != null)
+                        dgvLichSu.Columns["MaLichSu"].HeaderText = "Mã Lịch Sử";
+                    if (dgvLichSu.Columns["NguoiThaoTac"] != null)
+                        dgvLichSu.Columns["NguoiThaoTac"].HeaderText = "Người Thao Tác";
+                    if (dgvLichSu.Columns["MaCongViec"] != null)
+                        dgvLichSu.Columns["MaCongViec"].HeaderText = "Mã CV";
+                    if (dgvLichSu.Columns["NgayTao"] != null)
+                        dgvLichSu.Columns["NgayTao"].HeaderText = "Ngày Tạo";
+                    if (dgvLichSu.Columns["HanhDong"] != null)
+                        dgvLichSu.Columns["HanhDong"].HeaderText = "Hành Động";
+                    if (dgvLichSu.Columns["DoUuTien"] != null)
+                        dgvLichSu.Columns["DoUuTien"].HeaderText = "Độ Ưu Tiên";
+                    if (dgvLichSu.Columns["ChiTiet"] != null)
+                        dgvLichSu.Columns["ChiTiet"].HeaderText = "Chi Tiết";
+                }
+                else
+                {
+                    dgvLichSu.DataSource = null;
+                    MessageBox.Show("Không tìm thấy kết quả nào.", "Thông báo", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi tìm kiếm: " + ex.Message, "Lỗi", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void frmLichSu_Load(object sender, EventArgs e)
         {
-        }
-
-        public class LichSu
-        {
-            public string MaLichSu { get; set; }
-            public string NguoiThaoTac { get; set; }
-            public string MaCongViec { get; set; }
-            public DateTime NgayTao { get; set; }
-            public string HanhDong { get; set; }
-            public string DoUuTien { get; set; }
-            public string ChiTiet { get; set; }
         }
     }
 }
